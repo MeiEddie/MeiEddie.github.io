@@ -1,0 +1,36 @@
+name: Deploy VitePress Blog
+
+# 当推送到 main 分支时自动执行打包部署
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. 拉取仓库全部源码
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # 2. 配置 Node.js 环境
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      # 3. 安装依赖
+      - name: Install dependencies
+        run: npm install
+
+      # 4. 打包生成静态网页
+      - name: Build static site
+        run: npm run docs:build
+
+      # 5. 上传打包产物到 gh-pages 分支
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/.vitepress/dist

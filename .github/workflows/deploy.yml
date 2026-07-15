@@ -26,7 +26,7 @@ jobs:
 
       # 4. 打包生成静态网页
       - name: Build static site
-        run: npm run docs:build
+        run: npx vitepress build docs
 
       # 5. 上传打包产物到 gh-pages 分支
       - name: Deploy to GitHub Pages

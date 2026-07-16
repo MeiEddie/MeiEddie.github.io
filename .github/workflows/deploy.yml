@@ -1,9 +1,8 @@
 name: Deploy VitePress Blog
-# 推送main分支 + 手动一键重部署
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch: # 支持手动重跑
 
 permissions:
   contents: write
@@ -31,4 +30,3 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs/.vitepress/dist
-          clean: true # 清理旧文件，避免缓存残留

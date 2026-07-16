@@ -2,16 +2,14 @@ import { defineConfig } from 'vitepress'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  base:"/MeiEddie.github.io/",
+  base: "/",
   title: "Eddie's blog",
   description: "A blog",
   themeConfig: {
-    // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Examples', link: '/markdown-examples' }
     ],
-
     sidebar: [
       {
         text: 'Examples',
@@ -21,9 +19,8 @@ export default defineConfig({
         ]
       }
     ],
-
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/vuejs/vitepress' }
+      { icon: 'github', link: 'https://github.com/MeiEddie' }
     ]
   }
 })

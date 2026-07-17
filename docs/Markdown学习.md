@@ -201,10 +201,10 @@ $\theta=x^2$
 
 ##### 链接
 
-[百度](baidu.com "一个垃圾的搜索引擎")
+[百度](https://www.baidu.com "一个垃圾的搜索引擎")
 
 ```
-[百度](baidu.com "一个垃圾的搜索引擎")
+[百度](https://www.baidu.com "一个垃圾的搜索引擎")
 
 这里输出有点问题，点了会跳404
 ```
@@ -215,20 +215,20 @@ $\theta=x^2$
 
 [百度][id]
 
-[id]: baidu.com "一个垃圾的搜索引擎"
+[id]: https://www.baidu.com "一个垃圾的搜索引擎"
 
 [谷歌][2]
 
-[2]: Google.com "一个还可以的搜索引擎"
+[2]: https://www.Google.com "一个还可以的搜索引擎"
 
 ```
 [百度][id]
 
-[id]: baidu.com "一个垃圾的搜索引擎"
+[id]: https://www.baidu.com "一个垃圾的搜索引擎"
 
 [谷歌][2]
 
-[2]: Google.com "一个还可以的搜索引擎"
+[2]: https://www.Google.com "一个还可以的搜索引擎"
 
 这里输出有点问题，点了会跳404
 ```
@@ -247,10 +247,10 @@ $\theta=x^2$
 
 ##### URL
 
-http://www.baidu.com
+https://www.baidu.com
 
 ```
-http://www.baidu.com
+https://www.baidu.com
 ```
 
 <br>

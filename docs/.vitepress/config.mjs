@@ -3,18 +3,24 @@ import { defineConfig } from 'vitepress'
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   base: "/",
-  title: "Eddie's blog",
+  title: "Eddieの小窝",
   description: "A blog",
   themeConfig: {
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Examples', link: '/markdown-examples' }
     ],
     sidebar: [
       {
-        text: 'Examples',
+        text: '我的文章',
         items: [
-          { text: 'Markdown Examples', link: '/markdown-examples' },
+          { text: '简介', link: '/简介' },
+          { text: 'Markdown学习', link: '/Markdown学习' }
+        ]
+      },
+      {
+        text: '官方文章',
+        items: [
+          { text: 'markdown-examples', link: '/markdown-examples' },
           { text: 'Runtime API Examples', link: '/api-examples' }
         ]
       }

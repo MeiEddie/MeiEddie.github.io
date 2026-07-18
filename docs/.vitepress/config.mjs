@@ -9,23 +9,67 @@ export default defineConfig({
     nav: [
       { text: 'Home', link: '/' },
     ],
-    sidebar: [
-      {
-        text: '我的文章',
-        items: [
-          { text: '简介', link: '/简介' },
-          { text: 'HTML学习', link: '/HTML学习' },
-          { text: 'Markdown学习', link: '/Markdown学习' }
-        ]
-      },
-      {
-        text: '官方文章',
-        items: [
-          { text: 'markdown-examples', link: '/markdown-examples' },
-          { text: 'Runtime API Examples', link: '/api-examples' }
-        ]
-      }
-    ],
+    sidebar: {
+      '学习文章': [
+        { text: '简介', link: '/学习文章/简介' },
+
+        {
+          text: '我的文章',
+          collapsible: true,
+          collapsed: false,
+          items: [
+            { text: 'Python学习', link: '/学习文章/Python学习' },
+            { text: 'Markdown学习', link: '/学习文章/Markdown学习' },
+            { text: 'HTML+CSS+JS+Vue学习', link: '/学习文章/HTML+CSS+JS+Vue学习' }
+          ]
+        },
+
+        {
+          text: '官方文章',
+          collapsible: true,
+          collapsed: false,
+          items: [
+            { text: 'markdown-examples', link: '/学习文章/markdown-examples' },
+            { text: 'Runtime API Examples', link: '/学习文章/api-examples' }
+          ]
+        }
+      ],
+
+      '数独文章': [
+        { text: '数独介绍', link: '/数独文章/数独介绍' },
+
+        {
+          text: '数独技巧',
+          collapsible: true,
+          collapsed: false,
+          items: [
+            { text: '基础技巧', link: '/数独文章/基础技巧' },
+            { text: '进阶技巧', link: '/数独文章/进阶技巧' }
+          ]
+        },
+
+        {
+          text: '变形数独',
+          collapsible: true,
+          collapsed: false,
+          items: [
+            { text: '杀手数独', link: '/数独文章/杀手数独' }
+          ]
+        }
+      ],
+
+      'leetcode': [
+        {
+          text: 'leetcode-python',
+          collapsible: true,
+          collapsed: false,
+          items: [
+            { text: 'leetcode介绍', link: '/leetcode/leetcode介绍' }
+          ]
+        }
+      ]
+    },
+
     socialLinks: [
       { icon: 'github', link: 'https://github.com/MeiEddie' }
     ]

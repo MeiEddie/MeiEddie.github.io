@@ -8,22 +8,27 @@ hero:
   tagline: 分享零基础可落地的实操教程，记录踩坑经验、工具配置与学习心得。愿每一篇文章都能帮同样入门的开发者少走弯路。
   actions:
     - theme: brand
-      text: 简介
-      link: /简介
+      text: 学习文章
+      link: /学习文章/简介
     - theme: brand
-      text: Markdown学习
-      link: /Markdown学习
+      text: 数独文章
+      link: /数独文章/数独介绍
+    - theme: brand
+      text: leetcode
+      link: /leetcode/leetcode介绍
 
 features:
+  - title: 正在进行
+    details: 加入数独文章、学习HTML、学习Python
+  - title: 未来目标：
+    details: 学习CSS、JS、Vue，更改首页布局
   - title: 期待加入的模块
-    details: 数独、逻辑战略、个人兴趣
-  - title: 下一步
-    details: 学习Vue，更改首页布局
+    details: 游戏、逻辑学、战略、个人兴趣
 ---
 
 <br>
 
-# 《锦瑟》
+## 《锦瑟》
 
 **[唐]李商隐**
 

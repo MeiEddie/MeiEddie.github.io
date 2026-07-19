@@ -4,13 +4,11 @@ outline: deep
 
 # HTML+CSS+JS+Vue学习小记
 
-## 选择课程
+## 参考课程
 
 https://www.bilibili.com/video/BV1oz421q7BB?spm_id_from=333.788.videopod.episodes&vd_source=c5b001da49827c95685ff66b3392ffc9
 
-来自bilibili@尚学堂资料助手
-
-以下的笔记就基本围绕此教学视频展开了
+（来自bilibili@尚学堂资料助手）
 
 ## HTML
 

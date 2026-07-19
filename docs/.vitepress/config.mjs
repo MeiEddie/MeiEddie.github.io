@@ -59,12 +59,14 @@ export default defineConfig({
       ],
 
       'leetcode': [
+        { text: 'leetcode介绍', link: '/leetcode/leetcode介绍' },
+        
         {
-          text: 'leetcode-python',
+          text: '学习计划',
           collapsible: true,
           collapsed: false,
           items: [
-            { text: 'leetcode介绍', link: '/leetcode/leetcode介绍' }
+            { text: '编程基础0到1', link: '/leetcode/编程基础0到1' }
           ]
         }
       ]

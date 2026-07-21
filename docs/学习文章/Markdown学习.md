@@ -6,7 +6,7 @@ outline: deep
 
 ## Markdown介绍
 
-Markdown 是一种轻量级标记语言，它允许人们使用易读易写的纯文本格式编写文档。使用Markdown 编写的文档可以轻松地导出为 HTML、Word、图像、PDF、Epub 等多种格式的文档。当前许多网站都支持使用 Markdown 来撰写文档或者发表文章。例如：GitHub、简书、StackOverflow、有道云笔记等等。（来自bilibili@请叫我AXin）
+Markdown是一种轻量级标记语言，它允许人们使用易读易写的纯文本格式编写文档。使用Markdown编写的文档可以轻松地导出为HTML、Word、图像、PDF、Epub等多种格式的文档。当前许多网站都支持使用Markdown来撰写文档或者发表文章。例如：GitHub、简书、StackOverflow、有道云笔记等等。（来自bilibili@请叫我AXin）
 
 ## 参考课程
 
@@ -394,8 +394,6 @@ features:  # 页面下方功能卡片列表
 
 ##### 完全自定义首页Vue布局
 
-> VitePress支持直接在index.md里写完整Vue模板，关闭默认首页布局，用纯Vue+CSS写整个仪表盘页面，不用修改.vitepress/theme主题文件。
-
 1. 修改根目录index.md的Frontmatter，禁用默认home布局
 
 ```
@@ -415,14 +413,10 @@ layout: false
 
 一般来说各种符号的上方都要空出一行换行，下方一般不需要
 
-YAML缩进：空格、-不能乱，缩进用2个空格，不要用Tab，否则页面会报错。
-
 ## Markdown其他
-
-details: Lorem ipsum dolor sit amet, consectetur adipiscing elit是VitePress模板自带的示例占位描述，是无实义填充文本。
 
 使用VSCode预览：安装Markdown Preview Enhanced插件，然后再右键文件提示的命令面板中，输入Markdown: Open Preview to the Side，然后有提示：打开MarkDown侧边预览即可。（但是无法同步图片）
 
-Markdown采用纯文本，所以可以实现无缝跨平台迁移，同时，md基本上不需要鼠标和触控板来进行文字编辑，这种交互模式对程序员很友好。
+Markdown采用纯文本，所以可以实现无缝跨平台迁移，同时，md基本上不需要鼠标和触控板来进行文字编辑，这种交互模式对程序员很友好。(来自b站弹幕)
 
 markdown文件可以运行HTML和CSS代码。

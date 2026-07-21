@@ -62,6 +62,23 @@ Shift+Alt+向上或向下：复制+移动代码
 
 Ctrl+S：快速保存
 
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    !+回车快捷生成网页
+</body>
+
+</html>
+```
+
 <br>
 
 ##### HTML5简介与基础框架
@@ -182,7 +199,7 @@ meta：单标签，描述一个HTML网页文档的属性、关键词等。`chars
 
 `<br>`
 
-较规范写法：`<br />`
+较规范写法：`<br/>`
 
 后面的`/`表明换行结束
 
@@ -229,7 +246,31 @@ meta：单标签，描述一个HTML网页文档的属性、关键词等。`chars
 
 <br>
 
-##### 下节课007
+##### 图片标签
+
+`<img>`标签定义HTML页面中的图像
+
+```html
+<img src="" alt="" title="" width="" height="">
+```
+
+**src**：路径（图片地址与名字）
+
+**alt**：规定图像的替代文字（没找到路径时可以显示）
+
+**width**：规定图像的宽度
+
+**height**：规定图像的高度
+
+**title**：鼠标悬停在图片上给予提示
+
+::: tip
+width和height的单位都是px，例如`width="300px"`
+
+一般来说，为了保持图片的比例，我们不使用height
+:::
+
+##### 下节课008
 
 ## CSS
 

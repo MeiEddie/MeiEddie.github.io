@@ -20,6 +20,8 @@ export default defineConfig({
           items: [
             { text: 'Python学习', link: '/学习文章/Python学习' },
             { text: 'Markdown学习', link: '/学习文章/Markdown学习' },
+            { text: 'VitePress学习', link: '/学习文章/VitePress学习' },
+            { text: 'YAML学习', link: '/学习文章/YAML学习' },
             { text: 'HTML+CSS+JS+Vue学习', link: '/学习文章/HTML+CSS+JS+Vue学习' }
           ]
         },

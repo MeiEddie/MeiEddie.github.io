@@ -70,6 +70,15 @@ export default defineConfig({
           items: [
             { text: '编程基础0到1', link: '/leetcode/编程基础0到1' }
           ]
+        },
+
+        {
+          text: '做题学习',
+          collapsible: true,
+          collapsed: false,
+          items: [
+            { text: 'kmp算法', link: '/leetcode/kmp算法' }
+          ]
         }
       ]
     },

@@ -40,7 +40,7 @@ export default defineConfig({
         {
           text: '其他',
           collapsible: true,
-          collapsed: false,
+          collapsed: true,
           items: [
             { text: 'Markdown学习', link: '/学习文章/其他/Markdown学习' },
             { text: 'VitePress学习', link: '/学习文章/其他/VitePress学习' },

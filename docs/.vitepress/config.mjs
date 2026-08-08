@@ -10,18 +10,37 @@ export default defineConfig({
       { text: 'Home', link: '/' },
     ],
     sidebar: {
-      '学习文章': [
-        { text: '简介', link: '/学习文章/简介' },
+      '概念学习': [
+        { text: '简介', link: '/概念学习/简介' },
+
+        {
+          text: 'ai相关',
+          collapsible: true,
+          collapsed: true,
+          items: [
+            { text: 'ai生活化类比', link: '/概念学习/ai相关/ai生活化类比'},
+            { text: 'token增加模式', link: '/概念学习/ai相关/token增加模式'},
+            { text: '从LLM到AgentSkill', link: '/概念学习/ai相关/从LLM到AgentSkill'},
+          ]
+        },
+
+
+        { text: '嵌入式开发', link: '/概念学习/嵌入式开发'},
+        { text: '搜索引擎原理', link: '/概念学习/搜索引擎原理'},
+      ],
+
+      '理论学习': [
+        { text: '简介', link: '/理论学习/简介' },
 
         {
           text: 'python',
           collapsible: true,
           collapsed: true,
           items: [
-            { text: 'Python学习', link: '/学习文章/python/Python学习' },
-            { text: '排序算法', link: '/学习文章/python/排序算法' },
-            { text: 'kmp算法', link: '/学习文章/python/kmp算法' },
-            { text: '我的资源', link: '/学习文章/python/我的资源' }
+            { text: 'Python学习', link: '/理论学习/python/Python学习' },
+            { text: '排序算法', link: '/理论学习/python/排序算法' },
+            { text: 'kmp算法', link: '/理论学习/python/kmp算法' },
+            { text: '我的资源', link: '/理论学习/python/我的资源' },
           ]
         },
 
@@ -30,33 +49,68 @@ export default defineConfig({
           collapsible: true,
           collapsed: true,
           items: [
-            { text: 'HTML', link: '/学习文章/前端/HTML' },
-            { text: 'CSS', link: '/学习文章/前端/CSS' },
-            { text: 'JavaScript', link: '/学习文章/前端/JavaScript' },
-            { text: 'Vue', link: '/学习文章/前端/Vue' }
+            { text: 'HTML', link: '/理论学习/前端/HTML' },
+            { text: 'CSS', link: '/理论学习/前端/CSS' },
+            { text: 'JavaScript', link: '/理论学习/前端/JavaScript' },
+            { text: 'Vue', link: '/理论学习/前端/Vue' },
           ]
         },
 
+        { text: 'Markdown学习', link: '/理论学习/Markdown学习' },
+        { text: 'VitePress学习', link: '/理论学习/VitePress学习' },
+        { text: 'YAML学习', link: '/理论学习/YAML学习' },
+
         {
-          text: '其他',
+          text: '论文学习',
           collapsible: true,
           collapsed: true,
           items: [
-            { text: 'Markdown学习', link: '/学习文章/其他/Markdown学习' },
-            { text: 'VitePress学习', link: '/学习文章/其他/VitePress学习' },
-            { text: 'YAML学习', link: '/学习文章/其他/YAML学习' }
+            {text: 'Attention-Is-All-You-Need', link: '/理论学习/论文学习/Attention-Is-All-You-Need' },
           ]
         },
-
         {
           text: '官方文章',
           collapsible: true,
           collapsed: true,
           items: [
-            { text: 'markdown-examples', link: '/学习文章/官方文章/markdown-examples' },
-            { text: 'Runtime API Examples', link: '/学习文章/官方文章/api-examples' }
+            { text: 'markdown-examples', link: '/理论学习/官方文章/markdown-examples' },
+            { text: 'Runtime API Examples', link: '/理论学习/官方文章/api-examples' },
           ]
-        }
+        },
+      ],
+
+      '电脑知识': [
+        { text: '简介', link: '/电脑知识/简介'},
+        { text: '图片传输', link: '/电脑知识/图片传输'},
+        { text: '图片转PDF', link: '/电脑知识/图片转PDF'},
+        { text: '电脑装机', link: '/电脑知识/电脑装机'},
+        { text: '微软商店', link: '/电脑知识/微软商店'},
+      ],
+
+      '游戏制作': [
+        { text: '简介', link: '/游戏制作/简介' },
+        
+        {
+          text: 'Godot',
+          collapsible: true,
+          collapsed: false,
+          items: [
+            { text: '解决问题', link: '/游戏制作/Godot/解决问题' },
+          ]
+        },
+      ],
+
+      'leetcode': [
+        { text: 'leetcode介绍', link: '/leetcode/leetcode介绍' },
+        
+        {
+          text: '学习计划',
+          collapsible: true,
+          collapsed: false,
+          items: [
+            { text: '编程基础0到1', link: '/leetcode/编程基础0到1' },
+          ]
+        },
       ],
 
       '数独文章': [
@@ -68,7 +122,7 @@ export default defineConfig({
           collapsed: false,
           items: [
             { text: '基础技巧', link: '/数独文章/基础技巧' },
-            { text: '进阶技巧', link: '/数独文章/进阶技巧' }
+            { text: '进阶技巧', link: '/数独文章/进阶技巧' },
           ]
         },
 
@@ -77,35 +131,14 @@ export default defineConfig({
           collapsible: true,
           collapsed: false,
           items: [
-            { text: '杀手数独', link: '/数独文章/杀手数独' }
+            { text: '杀手数独', link: '/数独文章/杀手数独' },
           ]
-        }
+        },
       ],
-
-      '电脑知识': [
-        { text: '简介', link: '/电脑知识/简介'},
-        { text: '电脑装机', link: '/电脑知识/电脑装机'},
-        { text: '图片传输', link: '/电脑知识/图片传输'},
-        { text: '微软商店', link: '/电脑知识/微软商店'},
-        { text: '搜索引擎原理', link: '/电脑知识/搜索引擎原理'} 
-      ],
-
-      'leetcode': [
-        { text: 'leetcode介绍', link: '/leetcode/leetcode介绍' },
-        
-        {
-          text: '学习计划',
-          collapsible: true,
-          collapsed: false,
-          items: [
-            { text: '编程基础0到1', link: '/leetcode/编程基础0到1' }
-          ]
-        }
-      ]
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/MeiEddie' }
+      { icon: 'github', link: 'https://github.com/MeiEddie' },
     ]
   }
 })

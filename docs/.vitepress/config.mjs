@@ -10,6 +10,10 @@ export default defineConfig({
       { text: 'Home', link: '/' },
     ],
     sidebar: {
+      '简介': [
+        { text: '简介', link: '/简介' },
+      ],
+
       '概念学习': [
         { text: '简介', link: '/概念学习/简介' },
 
@@ -31,7 +35,6 @@ export default defineConfig({
 
       '理论学习': [
         { text: '简介', link: '/理论学习/简介' },
-
         {
           text: 'python',
           collapsible: true,

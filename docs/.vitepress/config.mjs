@@ -112,6 +112,7 @@ export default defineConfig({
           collapsed: false,
           items: [
             { text: '编程基础0到1', link: '/leetcode/编程基础0到1' },
+            { text: 'LeetCode热题100', link: '/leetcode/LeetCode热题100' },
           ]
         },
       ],

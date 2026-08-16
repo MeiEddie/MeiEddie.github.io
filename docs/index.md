@@ -5,7 +5,7 @@ layout: home
 hero:
   name: "Eddieの小窝"
   text: "欢迎~"
-  tagline: 分享零基础可落地的实操教程，记录踩坑经验、工具配置与学习心得。愿每一篇文章都能帮同样入门的开发者少走弯路。（最近同步：2026.8.10）
+  tagline: 分享零基础可落地的实操教程，记录踩坑经验、工具配置与学习心得。愿每一篇文章都能帮同样入门的开发者少走弯路。（最近同步：2026.8.16）
   actions:
     - theme: brand
       text: 简介
@@ -52,11 +52,15 @@ https://meieddie.github.io/MonsterValley/
 
 最近更新：2026.8.16
 
+<br>
+
 **TheLastMemory（最后的记忆）** 剧情向 Godot作品
 
 https://meieddie.github.io/TheLastMemory/
 
 最近更新：2026.6.11
+
+<br>
 
 **Puzzle（迷宫）** 迷宫 RPGmaker作品
 

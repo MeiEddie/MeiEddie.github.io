@@ -14,7 +14,7 @@ https://www.bilibili.com/video/BV1E7wtzaEdq/?spm_id_from=333.337.search-card.all
 
 ### 概念一览图
 
-![ai概念](../../public/assets/img/ai概念.png){width=500px}
+![ai概念](../../assets/img/ai概念.png){width=500px}
 
 ## LLM
 
@@ -30,7 +30,7 @@ https://platform.openai.com/tokenizer?utm_source=copilot.com
 中国大陆地区原生网络本身无法直连OpenAI官网，直连访问大概率直接触发拦截封禁提示。
 :::
 
-![拦截提示](../../public/assets/img/拦截提示.png){width=500px}
+![拦截提示](../../assets/img/拦截提示.png){width=500px}
 
 > 触发拦截提示如上图所示
 

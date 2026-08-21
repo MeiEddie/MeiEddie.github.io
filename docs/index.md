@@ -7,7 +7,7 @@ hero:
   text: "欢迎~"
   tagline: 分享零基础可落地的实操教程，记录踩坑经验、工具配置与学习心得。愿每一篇文章都能帮同样入门的开发者少走弯路。（最近同步：2026.8.21）
   image:
-    src: ./public/avatar.jpg
+    src: ./avatar.jpg
     alt: "头像"
   actions:
     - theme: brand
@@ -129,13 +129,13 @@ https://meieddie.github.io/Puzzle/
 
 ？胡言乱语
 
-![胡言乱语](/public/assets/img/胡言乱语.jpg)
+![胡言乱语](/assets/img/胡言乱语.jpg)
 
 ---
 
 ？有趣游戏
 
-![有趣游戏](/public/assets/img/有趣游戏.jpg)
+![有趣游戏](/assets/img/有趣游戏.jpg)
 
 
 <style>

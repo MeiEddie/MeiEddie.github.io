@@ -5,9 +5,9 @@ layout: home
 hero:
   name: "Eddieの小窝"
   text: "欢迎~"
-  tagline: 分享零基础可落地的实操教程，记录踩坑经验、工具配置与学习心得。愿每一篇文章都能帮同样入门的开发者少走弯路。（最近同步：2026.8.20）
+  tagline: 分享零基础可落地的实操教程，记录踩坑经验、工具配置与学习心得。愿每一篇文章都能帮同样入门的开发者少走弯路。（最近同步：2026.8.21）
   image:
-    src: /public/assets/img/avatar.jpg
+    src: ./public/assets/img/avatar.jpg
     alt: "头像"
   actions:
     - theme: brand

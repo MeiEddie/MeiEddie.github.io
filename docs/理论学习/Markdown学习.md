@@ -378,7 +378,7 @@ features:  # 页面下方功能卡片列表
 
 > 删掉layout: home后页面就不会显示首页横幅，会变成普通文档页面
 
-> index.md本质是Markdown文件，但顶部---包裹的区块是VitePress专属的Frontmatter（页头配置），不属于标准 Markdown。VitePress/VuePress/Hexo这类静态博客工具，都会在md文件顶部加Frontmatter（YAML/TOML），用来给页面加自定义参数，属于工具扩展语法，只有---以外的内容，才是通用Markdown。
+> index.md本质是Markdown文件，但顶部---包裹的区块是VitePress专属的Frontmatter（页头配置），不属于标准Markdown。VitePress/VuePress/Hexo这类静态博客工具，都会在`.md`文件顶部加Frontmatter（YAML/TOML），用来给页面加自定义参数，属于工具扩展语法，只有---以外的内容，才是通用Markdown。
 
 ::: tip
 简单区分
@@ -387,6 +387,10 @@ features:  # 页面下方功能卡片列表
 
 --- 外部：标准Markdown
 :::
+
+<br>
+
+---
 
 ### 一些额外用法
 
@@ -406,6 +410,8 @@ outline: deep：页面右侧目录（大纲）显示深层级标题
 
 <br>
 
+---
+
 ##### 引入其他文件（以`.pdf`文件为例）
 
 纯链接，不内嵌
@@ -416,17 +422,29 @@ outline: deep：页面右侧目录（大纲）显示深层级标题
 [PDF文档](/book.pdf)
 ```
 
-关于新标签打开的`{target="_blank"}`方法，是部分扩展语法，原生是不支持的
-
 ```markdown
 [PDF文档](/book.pdf){target="_blank"}
 ```
 
-Vitepress虽然在本地测试的时候可以正常打开，但是托管之后大概率也是用不了的
+::: danger
+跳转`.md`文件，加入`{target="_blank"}`跳转页面会出乱码
+:::
 
-包括跳转`.md`文件，加入`{target="_blank"}`跳转页面会出乱码
+**这里是我之前的理解：**
+
+关于新标签打开的`{target="_blank"}`方法，是部分扩展语法，原生是不支持的
+
+Vitepress虽然在本地测试的时候可以正常打开，但是托管之后大概率用不了
+
+**但是之后发现：**
+
+好像是Github在托管的时候，文件保存了，但是特殊原因没有被读取
+
+进一步了解可参考[VitePress学习](./VitePress学习){target="_blank"}中的`有关首页hero添加image的问题`。
 
 <br>
+
+---
 
 ##### 完全自定义首页Vue布局
 

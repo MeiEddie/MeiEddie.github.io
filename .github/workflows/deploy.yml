@@ -25,6 +25,13 @@ jobs:
       - name: Build static site
         run: npx vitepress build docs
 
+      - name: Copy static assets into build output
+        run: |
+          # VitePress 构建时不会自动把 docs/ 下的静态资源（头像、PDF、图片）
+          # 复制到构建产物，需要手动复制，否则线上访问会 404
+          cp docs/avatar.jpg docs/.vitepress/dist/avatar.jpg
+          cp -r docs/assets/. docs/.vitepress/dist/assets/
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:

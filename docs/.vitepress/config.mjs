@@ -150,8 +150,8 @@ export default defineConfig({
         
       ],
 
-      '战略': [
-        { text: '战略简介', link: '/战略/战略简介' },
+      '梗图': [
+        { text: '梗图', link: '/梗图/我的梗图' },
       ],
 
       '数独文章': [

@@ -5,7 +5,7 @@ layout: home
 hero:
   name: "Eddieの小窝"
   text: "欢迎~"
-  tagline: 分享零基础可落地的实操教程，记录踩坑经验、工具配置与学习心得。愿每一篇文章都能帮同样入门的开发者少走弯路。（最近同步：2026.8.28）
+  tagline: 分享零基础可落地的实操教程，记录踩坑经验、工具配置与学习心得。愿每一篇文章都能帮同样入门的开发者少走弯路。（最近同步：2026.8.31）
   image:
     src: ./avatar.jpg
     alt: "头像"
@@ -29,8 +29,8 @@ hero:
       text: 游戏制作
       link: ./游戏制作/简介
     - theme: alt
-      text: 战略
-      link: ./战略/战略简介
+      text: 梗图
+      link: ./梗图/我的梗图
     - theme: alt
       text: 数独文章
       link: ./数独文章/数独介绍
@@ -121,30 +121,31 @@ https://meieddie.github.io/Puzzle/
 
 <br>
 
-**修仙·问道长生** 文字修仙 WorkBuddy作品
+**修仙·问道长生** 文字修仙 原生VanillaJS作品
 
 https://meieddie.github.io/XiuXian/
 
+最近更新：2026.8.31
+
+<br>
+
+**占领蚂蚁窝** 益智 微信小程序
+
+![占领蚂蚁窝](/assets/img/小程序码.png){width=400px}
+
 最近更新：2026.8.28
+
+```
+新版本无法显示：
+1. 删除原来的旧版本，重新打开
+2. 小程序审核可能需要几天时间
+```
 
 <br>
 
 **以上游戏可能会不定期更新**
 
-<br>
-
----
-
-？胡言乱语
-
-![胡言乱语](/assets/img/胡言乱语.jpg)
-
----
-
-？有趣游戏
-
-![有趣游戏](/assets/img/有趣游戏.jpg)
-
+**有任何问题可以在“简介/本站建设/联系”咨询**
 
 <style>
 .VPHome .VPHero .VPImage.image-src {

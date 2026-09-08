@@ -24,6 +24,8 @@ jobs:
 
       - name: Build static site
         run: npx vitepress build docs
+        env:
+          ZSU_PASSWORD: ${{ secrets.ZSU_PASSWORD }}
 
       - name: Copy static assets into build output
         run: |

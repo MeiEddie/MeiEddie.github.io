@@ -2,4 +2,3 @@ node_modules/
 docs/.vitepress/dist/
 .DS_Store
 Thumbs.db
-docs/.vitepress/zsu.secret.json

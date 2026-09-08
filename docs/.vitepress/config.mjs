@@ -1,21 +1,11 @@
 import { defineConfig } from 'vitepress'
-import { readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 
 let zsuPasswordHash = 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3'
-try {
-  const secret = JSON.parse(readFileSync(new URL('./zsu.secret.json', import.meta.url), 'utf-8'))
-  if (secret.passwordHash) {
-    zsuPasswordHash = secret.passwordHash
-  } else if (secret.password) {
-    zsuPasswordHash = createHash('sha256').update(secret.password).digest('hex')
-  }
-} catch {}
 if (process.env.ZSU_PASSWORD) {
   zsuPasswordHash = createHash('sha256').update(process.env.ZSU_PASSWORD).digest('hex')
 }
 
-// https://vitepress.dev/reference/site-config
 export default defineConfig({
   base: "/",
   title: "Eddieの小窝",

@@ -4,7 +4,11 @@ import { createHash } from 'node:crypto'
 let zsuPasswordHash = 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3'
 if (process.env.ZSU_PASSWORD) {
   zsuPasswordHash = createHash('sha256').update(process.env.ZSU_PASSWORD).digest('hex')
+  console.log(`[zsu-debug] env ZSU_PASSWORD is set (length=${process.env.ZSU_PASSWORD.length})`)
+} else {
+  console.log('[zsu-debug] env ZSU_PASSWORD is NOT set, using fallback hash')
 }
+console.log(`[zsu-debug] baked hash = ${zsuPasswordHash}`)
 
 export default defineConfig({
   base: "/",

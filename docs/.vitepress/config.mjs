@@ -1,10 +1,30 @@
 import { defineConfig } from 'vitepress'
+import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+
+let zsuPasswordHash = 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3'
+try {
+  const secret = JSON.parse(readFileSync(new URL('./zsu.secret.json', import.meta.url), 'utf-8'))
+  if (secret.passwordHash) {
+    zsuPasswordHash = secret.passwordHash
+  } else if (secret.password) {
+    zsuPasswordHash = createHash('sha256').update(secret.password).digest('hex')
+  }
+} catch {}
+if (process.env.ZSU_PASSWORD) {
+  zsuPasswordHash = createHash('sha256').update(process.env.ZSU_PASSWORD).digest('hex')
+}
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   base: "/",
   title: "Eddieの小窝",
   description: "一个小小的博客",
+  vite: {
+    define: {
+      __ZSU_PASSWORD_HASH__: JSON.stringify(zsuPasswordHash),
+    },
+  },
   themeConfig: {
     nav: [
       { text: 'Home', link: '/' },
@@ -14,8 +34,38 @@ export default defineConfig({
         { text: '简介', link: '/简介' },
       ],
 
+      '电脑知识': [
+        { text: '简介', link: '/电脑知识/简介'},
+
+        {
+          text: '办公软件',
+          collapsible: true,
+          collapsed: false,
+          items: [
+            { text: 'Excel表冻结行列', link: '/电脑知识/办公软件/Excel表冻结行列' },
+          ]
+        },
+
+        { text: '文件整理', link: '/电脑知识/文件整理'},
+        { text: '图片传输', link: '/电脑知识/图片传输'},
+        { text: '图片转PDF', link: '/电脑知识/图片转PDF'},
+        { text: '图片格式转换', link: '/电脑知识/图片格式转换'},
+        { text: '电脑装机', link: '/电脑知识/电脑装机'},
+        { text: '微软商店', link: '/电脑知识/微软商店'},
+      ],
+
       '概念学习': [
         { text: '简介', link: '/概念学习/简介' },
+
+        {
+          text: '网页制作',
+          collapsible: true,
+          collapsed: false,
+          items: [
+            { text: '前端部分', link: '/概念学习/网页制作/前端部分' },
+            { text: '后端部分', link: '/概念学习/网页制作/后端部分' },
+          ]
+        },
 
         {
           text: 'ai相关',
@@ -31,6 +81,7 @@ export default defineConfig({
 
         { text: '嵌入式开发', link: '/概念学习/嵌入式开发'},
         { text: '搜索引擎原理', link: '/概念学习/搜索引擎原理'},
+        { text: '手部识别', link: '/概念学习/手部识别'},
       ],
 
       '理论学习': [
@@ -80,15 +131,6 @@ export default defineConfig({
             { text: 'Runtime API Examples', link: '/理论学习/官方文章/api-examples' },
           ]
         },
-      ],
-
-      '电脑知识': [
-        { text: '简介', link: '/电脑知识/简介'},
-        { text: '文件整理', link: '/电脑知识/文件整理'},
-        { text: '图片传输', link: '/电脑知识/图片传输'},
-        { text: '图片转PDF', link: '/电脑知识/图片转PDF'},
-        { text: '电脑装机', link: '/电脑知识/电脑装机'},
-        { text: '微软商店', link: '/电脑知识/微软商店'},
       ],
 
       '游戏制作': [
@@ -148,6 +190,26 @@ export default defineConfig({
 
         { text: '个人培养方案查看', link: '/中山大学/个人培养方案查看' },
         
+        {
+          text: '高等数学',
+          collapsible: true,
+          collapsed: false,
+          items: [
+            { text: '简介', link: '/中山大学/高等数学/简介' },
+            { text: '第一课', link: '/中山大学/高等数学/第一课' },
+          ]
+        },
+
+        {
+          text: '无机化学',
+          collapsible: true,
+          collapsed: false,
+          items: [
+            { text: '简介', link: '/中山大学/无机化学/简介' },
+            { text: '第一课', link: '/中山大学/无机化学/第一课' },
+          ]
+        },
+
       ],
 
       '梗图': [

@@ -5,7 +5,7 @@ layout: home
 hero:
   name: "Eddieの小窝"
   text: "欢迎~"
-  tagline: 分享零基础可落地的实操教程，记录踩坑经验、工具配置与学习心得。愿每一篇文章都能帮同样入门的开发者少走弯路。（最近同步：2026.8.31）
+  tagline: 分享零基础可落地的实操教程，记录踩坑经验、工具配置与学习心得。愿每一篇文章都能帮同样入门的开发者少走弯路。（最近同步：2026.9.8）
   image:
     src: ./avatar.jpg
     alt: "头像"
@@ -14,14 +14,14 @@ hero:
       text: 简介
       link: ./简介
     - theme: brand
+      text: 电脑知识
+      link: ./电脑知识/简介
+    - theme: brand
       text: 概念学习
       link: ./概念学习/简介
     - theme: brand
       text: 理论学习
       link: ./理论学习/简介
-    - theme: brand
-      text: 电脑知识
-      link: ./电脑知识/简介
     - theme: brand
       text: leetcode
       link: ./leetcode/leetcode介绍
@@ -34,60 +34,46 @@ hero:
     - theme: alt
       text: 数独文章
       link: ./数独文章/数独介绍
+    - theme: alt
+      text: 中山大学
+      link: ./中山大学/目录
 
 features:
   - title: 正在进行
+    details: 上课
+  - title: 暂时停止
     details: ai、CSS、Python
   - title: 未来目标：
     details: JS、Vue，更改首页布局、网络碎片信息
   - title: 期待加入的模块
-    details: 逻辑学
+    details: 逻辑学、战略
 ---
 
 <br>
 
-<ClientOnly>
-<div style="text-align:left;margin:1rem 0;">
-  <button id="zsuBtn" @click="goZSU" class="custom-vp-alt-btn">中山大学</button>
-</div>
-</ClientOnly>
-
 <script setup>
-function goZSU(){
-  const pwd = prompt("请输入访问密码");
-  if(pwd === "123"){
-    location.href="./中山大学/目录";
-  }else{
-    alert("密码错误");
-  }
+import { onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vitepress'
+
+const router = useRouter()
+
+async function sha256(text){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('')
 }
+
+async function zsuGate(href){
+  if (!decodeURIComponent(href || '').includes('中山大学')) return
+  if (decodeURIComponent(location.pathname).includes('中山大学')) return
+  const pwd = prompt("请输入访问密码")
+  if (pwd !== null && (await sha256(pwd)) === __ZSU_PASSWORD_HASH__) return
+  alert("密码错误")
+  return false
+}
+
+onMounted(() => { router.onBeforeRouteChange = zsuGate })
+onUnmounted(() => { if (router.onBeforeRouteChange === zsuGate) router.onBeforeRouteChange = undefined })
 </script>
-
-<style>
-.custom-vp-alt-btn {
-  padding: 0 2rem;
-  height: 4rem;
-  border-radius: 12px;
-  font-size: 1.5rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: 0.2s ease;
-
-  border: 1px solid var(--vp-button-alt-border);
-  color: var(--vp-button-alt-text);
-  background-color: var(--vp-button-alt-bg);
-}
-.custom-vp-alt-btn:hover {
-  border-color: var(--vp-button-alt-hover-border);
-  color: var(--vp-button-alt-hover-text);
-  background-color: var(--vp-button-alt-hover-bg);
-}
-.custom-vp-alt-btn:active {
-  border-color: var(--vp-button-alt-active-border);
-  color: var(--vp-button-alt-active-text);
-  background-color: var(--vp-button-alt-active-bg);
-}
-</style>
 
 <br>
 
@@ -126,6 +112,30 @@ https://meieddie.github.io/Puzzle/
 https://meieddie.github.io/XiuXian/
 
 最近更新：2026.8.31
+
+<br>
+
+**TileGuard（合成塔防）** 塔防 原生VanillaJS作品
+
+https://meieddie.github.io/TileGuard/
+
+最近更新：2026.9.4
+
+<br>
+
+**Gravity（引力弹弓）** 益智 电脑端友好 原生VanillaJS作品
+
+https://meieddie.github.io/Gravity/
+
+最近更新：2026.9.4
+
+<br>
+
+**TrapTheKitten（围住小猫）** 益智 原生VanillaJS作品
+
+https://meieddie.github.io/TrapTheKitten/
+
+最近更新：2026.9.4
 
 <br>
 

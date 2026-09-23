@@ -1,4 +1,11 @@
 node_modules/
 docs/.vitepress/dist/
+
+# 构建缓存（Vite 依赖预打包，可自动重建）
+docs/.vitepress/cache/
+
+# Vite 加载 config 时的中间产物（config.mjs.timestamp-*.mjs）
+docs/.vitepress/config.mjs.timestamp-*.mjs
+
 .DS_Store
 Thumbs.db

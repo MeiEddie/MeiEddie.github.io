@@ -1,0 +1,7 @@
+/* 点击粒子特效的基础样式（关键定位已内联到每个粒子，这里仅作补充/兜底） */
+.click-spark {
+  position: fixed;
+  pointer-events: none;
+  z-index: 2147483647;
+  will-change: transform, opacity;
+}

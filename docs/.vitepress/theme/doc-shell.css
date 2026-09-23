@@ -1,0 +1,387 @@
+/* ==========================================================================
+   文章页「大容器」布局（2026.9.22 新增）
+   --------------------------------------------------------------------------
+   需求（站长手绘稿 + 参考截图）：
+     · 页面左右两边留出空位（露出页面底色）；
+       ⚠️ 2026.9.22 七轮补：**顶边**同样要留空位（原先紧贴顶栏下沿）——
+          = `--doc-shell-gap` 变量（让位）+ `::after`「空位遮罩」（挡滚上去的正文），
+          见下面 1) 与 2.1) 两节，两处必须成套存在。
+     · 正中间一个**大容器**，把「侧边栏 + 正文 + 本页目录」全部装进去；
+     · 容器内部从左到右 = **左：文章目录（侧边栏）→ 中：正文 → 右：本页小标题（On this page）**；
+     · 侧边栏内容仍是原来那套文章列表 ——
+       分类做成**整行**的条目条（左＝分类名，右＝折叠箭头），
+       鼠标 hover / 点一下 → 文章列表在它**下方**铺开供点选；
+       散装（无分类）文章与分类同级，直接点进文章。
+       ⚠️ 2026.9.22 改版：分类最初是三列小方块（aspect-ratio:1/1），站长要求"每个分类占一整行"，
+          于是 .nav 由 repeat(3,1fr) 收成 1fr，方块改成整行条目条 + 恢复折叠箭头。
+     · 点文章只换正文 + 正文右侧的小标题（SPA 默认行为，不整页刷新）。
+   --------------------------------------------------------------------------
+   为什么用纯 CSS（而不是改组件 / 换 Layout.vue）：
+     VitePress 的 DOM 是
+         .Layout > ( .VPNavBar, .VPLocalNav, aside.VPSidebar, #VPContent > .VPDoc )
+     **侧边栏与正文是兄弟节点**，没有一个现成的公共父元素能当"大容器"。
+     所以做法是：
+       ① 容器底色 = .VPContent.has-sidebar::before（固定定位、水平居中、带圆角描边）；
+       ② 把 aside.VPSidebar 从"贴屏幕左缘"改成"落在容器**最左列**"；
+       ③ 给 .VPContent.has-sidebar 补左右内边距，让正文让出容器内衬 + 侧边栏那一列。
+     三者的横向坐标都由下面同一组变量算出来，必须一起改（改一个就会错位）。
+     ⚠️ 侧边栏在左 / 在右只是「左内衬」与「右内衬」两个算式对调（见 3) 与 4) 两处），
+        以及 .VPSidebar 的 left/right 对调 —— 容器本身永远水平居中，不用动。
+   ⚠️ 全部规则只在 ≥960px 生效：<960 是移动端抽屉式侧边栏，保持默认主题原样。
+   ⚠️ 大量 !important 是必需的：默认主题的组件样式带 [data-v-xxx] 作用域属性，
+      特异性比这里的裸 class 高（详见 .workbuddy/memory 里的老坑记录）。
+   ========================================================================== */
+
+/* ===== 1) 可调参数（改布局只动这一块） ===== */
+:root {
+  /* 大容器宽度：屏幕很宽时封顶 1320px；窄一些时按 92%（左右各留约 4% 空位）。
+     ⚠️ 百分比的基准两边必须一致：固定定位的伪元素按视口算，.VPContent 的内边距按
+        自己的包含块（= .Layout 宽 = 视口去滚动条宽）算 —— 实测两者相等，故可共用。 */
+  --doc-shell-w: min(1320px, 92%);
+  /* 容器内衬：容器边框到内部内容（侧边栏 / 正文）的距离 */
+  --doc-shell-pad: 24px;
+  /* 右侧侧边栏那一列的宽度 */
+  --doc-side-w: 264px;
+  /* 侧边栏列与正文区之间的缝 */
+  --doc-col-gap: 20px;
+  /* 容器与顶栏之间留出的空位（2026.9.22 七轮新增 —— 站长反馈「容器与上边栏紧贴在一起，
+     要留出空位」）。容器顶边 = 顶栏下沿 + 这个值，改大小只动这一个变量。 */
+  --doc-shell-gap: 16px;
+  /* 容器顶边：顶栏下沿再让出 --doc-shell-gap 的空位。
+     ⚠️ 顶栏仍是**不透明实底**（继续负责盖住滚上去的正文）；
+        而下面这条新留出的缝不在顶栏覆盖范围内 → 必须由 2.1) 的「空位遮罩」接手，
+        否则正文往上滚时会从这条缝里透出来（别删那一层）。 */
+  --doc-shell-top: calc(var(--vp-nav-height) + var(--doc-shell-gap));
+  /* 本页目录（右侧大纲）列宽：比默认的 224 略收，给新侧边栏腾地方 */
+  --doc-aside-w: 224px;
+
+  /* 表面色：容器用"卡片色"，侧边栏面板用"页面底色"→ 形成内嵌观感。
+     亮色下 = 浅灰容器 + 白面板；暗色下 = 稍亮容器 + 更暗面板，两边都成立。
+     ⚠️ 2026.9.22 八轮：这两个从**不透明**换成**半透明**（值统一放在 style.css 的
+        「通透度」一节，亮暗各一份）→ 文章区背景照片从容器里透出来（modulate）。
+        不再直接引用 --vp-c-bg / --vp-c-bg-soft：那两档无 alpha、等于实底。
+        改通透程度只动 style.css 的 --article-glass-*，本文件不用动。
+     ⚠️ 两个都是"半透明层叠出的观感"，调其中任何一个都要连带看另一层（见 style.css 说明）。 */
+  --doc-shell-bg: var(--article-glass-shell);
+  --doc-panel-bg: var(--article-glass-panel);
+  --doc-shell-border: var(--vp-c-divider);
+}
+
+/* 960~1279：顶栏下面还压着 VPLocalNav（"本页目录"下拉那一条，≥1280 才隐藏），
+   它实测占 48px（含 1px 下边框）→ 整个容器（含侧边栏、目录）一起下移，避免被它压住。
+   ⚠️ 只在它**真的显示**时才下移：页面一个标题都没有时 VitePress 会给它加 .empty
+      → display:none、不占位置（此时正文从 y=80 就开始）。若仍按 128 摆容器，
+      顶栏和容器之间会空出 48px 的一条带子，正文滚上去会从那里透出来。
+   ⚠️ 用 .Layout:has() 而不是 :root：变量设在 .Layout 上，只影响它自己的子树
+      （侧边栏、#VPContent 都在里面），不动全局。 */
+@media (min-width: 960px) and (max-width: 1279px) {
+  .Layout:has(.VPLocalNav:not(.empty)) {
+    --doc-shell-top: calc(var(--vp-nav-height) + 48px + var(--doc-shell-gap));
+  }
+}
+
+/* 中等宽度（960~1439）：容器按 92% 会偏窄，把侧边栏列和目录列都收一档，
+   否则「目录 224 + 正文最小 640」会顶破容器。 */
+@media (min-width: 960px) and (max-width: 1439px) {
+  :root {
+    --doc-side-w: 240px;
+    --doc-aside-w: 196px;
+  }
+}
+
+@media (min-width: 960px) {
+  /* ===== 2) 大容器外壳 =====
+     固定定位：页面滚动时容器边框始终框着视口（像一块常驻面板），
+     正文在容器里正常随页面滚动。z-index:0 → 正文、侧边栏、顶栏依次压在上面。
+     ⚠️ 2026.9.22 七轮：容器顶边由"贴顶栏下沿"改为"再让出 --doc-shell-gap 空位"
+        （站长反馈紧贴在一起）→ 顶边与顶栏的分隔线不再重合，四条边都画。 */
+  .VPContent.has-sidebar::before {
+    content: "";
+    position: fixed;
+    top: var(--doc-shell-top);
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: var(--doc-shell-w);
+    background-color: var(--doc-shell-bg);
+    /* 毛玻璃：把背后的照片糊掉一层（modulate 的另一半）。
+       ⚠️ 少了这一条就只是"变淡"，照片的城市细节会从字缝里透上来跟正文抢对比度。
+       ⚠️ 只在**伪元素**上挂 backdrop-filter 是刻意的 —— 它没有子元素，不会给任何
+          fixed 后代换掉包含块（真元素上挂这个会把内部 position:fixed 的东西全带偏）。 */
+    -webkit-backdrop-filter: blur(var(--article-glass-blur));
+    backdrop-filter: blur(var(--article-glass-blur));
+    border: 1px solid var(--doc-shell-border);
+    /* 底边在视口外，圆角只给上面两个（下面两个给了也看不见） */
+    border-radius: 20px 20px 0 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ===== 2.1) 空位遮罩（七轮新增） =====
+     为什么必须有这一层：容器原本贴顶栏下沿，往上滚的正文由**顶栏的不透明底色**盖住；
+     现在顶栏下面让出了 --doc-shell-gap 这条缝，缝里什么都没有 → 正文会从缝里透出去
+     （实测：把一段正文滚到缝里时，<h1> 的盒子正好压在 y=88 上）。
+     做法：在缝上盖一层"和页面背景图**逐像素相同**"的固定层，把文字挡掉、只留照片。
+     ⚠️ 尺寸必须写 `inset: 0`（= 视口），**与 body::before 完全一致**，再用 clip-path 只露出
+        顶上那一条 —— 两边盒子相同 → `background-size: cover` 算出的缩放与偏移也相同 →
+        缝里接出来的照片与左右两侧严丝合缝。
+        · 不要改成 `height: var(--doc-shell-top)`：盒子只有 96px 高，cover 会按 96px 重新
+          缩放一次，缝里会出现另一张"放大版"的图（拍出来就是一条接不上的横带）。
+        · 也不要用 `background-attachment: fixed` 去救：① VitePress 的 base.css 在
+          「减少动态效果」下有一条 `*,::before,::after{background-attachment:initial !important}`
+          —— 实测该环境下它被按回 scroll；② body::before 用的也是默认的 scroll，
+          只要两边盒子一样就天然对齐，没必要引入这个变量。
+     ⚠️ clip-path 的百分比基准是元素自己的盒子（= 视口高）→ 底部内缩 `100% - --doc-shell-top`，
+        露出的正是 y = 0 ~ --doc-shell-top 那一条；元素是 fixed → 滚到哪这条带都贴在视口顶上。
+     ⚠️ z-index: 12 —— 要压过正文与右侧目录（`.VPDoc .aside` 那套是 10），
+        但要低于顶栏 30 / 本地导航 20 / 侧边栏 25（那几层自身不透明，继续压在上面才不会盖住导航）。
+     ⚠️ 背景变量（--article-bg-image / --article-bg-scrim）与 body::before 共用，
+        换图只改 style.css 那一处；.dark 下 scrim 自动换成黑纱（变量在 .dark 里重定义）。 */
+  .VPContent.has-sidebar::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    clip-path: inset(0 0 calc(100% - var(--doc-shell-top)) 0);
+    z-index: 12;
+    background-image: var(--article-bg-scrim), var(--article-bg-image);
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    pointer-events: none;
+  }
+
+  /* ===== 3) 正文让位 =====
+     左 = 空位 + 内衬 + 侧边栏列 + 缝；右 = 空位 + 内衬。
+     ⚠️ 侧边栏在最左，所以"侧边栏那一列"算进 **padding-left**（不是 right）；
+        这两条与下面 4) 的 left/right 是一对，改一处必须同时改另一处。 */
+  .VPContent.has-sidebar {
+    padding-left: calc(
+      (100% - var(--doc-shell-w)) / 2 + var(--doc-shell-pad) + var(--doc-side-w) +
+        var(--doc-col-gap)
+    ) !important;
+    padding-right: calc((100% - var(--doc-shell-w)) / 2 + var(--doc-shell-pad)) !important;
+  }
+
+  /* 正文列允许收缩：默认主题在 ≥1280 给 .content 写了 min-width:640px，
+     中等宽度下「640 + 目录列」会顶破容器（内容溢到侧边栏上）。 */
+  .VPDoc .content {
+    min-width: 0 !important;
+  }
+  /* 目录列按变量收窄：.aside 的 max-width 与内部 .aside-container / .aside-curtain
+     的写死宽度（默认 256 / 224）要一起改。 */
+  .VPDoc .aside {
+    max-width: calc(var(--doc-aside-w) + 24px) !important;
+    padding-left: 24px !important;
+  }
+  .VPDoc .aside .aside-container,
+  .VPDoc .aside .aside-curtain {
+    width: var(--doc-aside-w) !important;
+  }
+  /* 目录是 fixed 定位的：把它对齐到容器内部的顶部，且高度不再超出容器底部 */
+  .VPDoc .aside .aside-container {
+    padding-top: calc(var(--doc-shell-top) + var(--doc-shell-pad) + 4px) !important;
+    height: calc(100vh - var(--doc-shell-top) - var(--doc-shell-pad)) !important;
+  }
+  /* 目录底部那条渐隐遮罩（默认主题的 `.aside-curtain`）：**八轮起停用**。
+     为什么停用：默认主题给它是"fixed + bottom:0 + 高 32px + 一层渐变色"，
+     盖的本来是**视口底**那 32px。而七轮把容器顶边下移、并给 .aside-container 写了
+     `height: calc(100vh - --doc-shell-top - --doc-shell-pad)` → 目录内容区的下沿
+     跑到 y=687；幕布却仍钉在视口底 **775~807**（实测：TOC 最后一项下沿 771、
+     可视区下沿 687）→ 它盖的那一条里**一个字都没有**，纯粹白画一层。
+     之前它画的是不透明 --doc-shell-bg（与容器同色）→ 看不出来；
+     八轮容器改半透明后它就露馅了：0.66 的幕布叠在 0.66 的容器上 = 0.88，
+     在目录列底部刷出一条**比周围更白的横带**（实测截图上清晰可见）。
+     ⚠️ 别改回"给幕布换深色/换模糊"：只要它**画颜色**，在半透明容器上就必然有色差
+        （幕布的 alpha 是叠在容器 alpha 之上的，算不出"与周围同样的合成结果"）。
+     它原本的用意（目录在底部淡出）改用下面的 mask 实现 —— mask 只改"看得见多少"、
+        不画任何像素，所以永远不会给容器添色带。 */
+  .VPDoc .aside .aside-curtain {
+    display: none !important;
+  }
+  /* 目录淡出（接替上一条幕布）：把 .aside-container 最后 32px 用 mask 渐隐 ——
+     长目录滚到底时最后几项柔化消失，而不是被 687 那条线硬切。
+     ⚠️ mask 的定位基准是这个元素自己的边框盒（高 687），所以 `100% - 32px` = y 655~687，
+        正好是内容区真正的下沿（不是视口底）。 */
+  .VPDoc .aside .aside-container {
+    -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(180deg, #000 calc(100% - 32px), transparent);
+  }
+
+  /* ===== 4) 侧边栏：容器**最左列**的一块面板 =====
+     默认主题把它做成"贴屏幕左缘、通高、底色 --vp-c-bg-alt"的一整条；
+     这里改成容器内部的圆角面板（左边贴齐容器内衬，右边与正文之间留 --doc-col-gap）。
+     ⚠️ 它默认是 left:0（贴屏幕边），所以必须显式把 left 推进容器内衬，
+        同时把 right 归位成 auto —— 两个都写，别只改一个（fixed 元素给了 left+right 会被拉伸）。 */
+  .VPSidebar {
+    top: calc(var(--doc-shell-top) + var(--doc-shell-pad)) !important;
+    bottom: 0 !important;
+    left: calc((100% - var(--doc-shell-w)) / 2 + var(--doc-shell-pad)) !important;
+    right: auto !important;
+    width: var(--doc-side-w) !important;
+    max-width: none !important;
+    padding: 16px 14px 28px !important;
+    background-color: var(--doc-panel-bg) !important;
+    /* 毛玻璃（同容器 ::before）。⚠️ 面板叠在容器**之上**，所以它那档透明度在
+       style.css 里刻意给得比容器低，两层叠完（≈80%）才既透得过照片、又比正文区"实"一点。 */
+    -webkit-backdrop-filter: blur(var(--article-glass-blur));
+    backdrop-filter: blur(var(--article-glass-blur));
+    border: 1px solid var(--doc-shell-border);
+    border-bottom: 0;
+    border-radius: 16px 16px 0 0;
+    box-shadow: none !important;
+  }
+  /* 默认主题在侧边栏顶部有一条 nav 高的"幕布"（用来盖住顶栏那一段的透明区）。
+     面板现在从顶栏下面才刚开始，用不上了，去掉。 */
+  .VPSidebar .curtain {
+    display: none;
+  }
+
+  /* 顶栏在侧边栏页要变成不透明实底：
+     默认主题给 .VPNavBar.has-sidebar 的左段（站名那一格）留了 transparent
+     （原本靠侧边栏通高的底色补上）。容器方案下侧边栏不再通高，
+     而正文会往上滚过顶栏 —— 不补这层实底，滚上去的正文会从透明区透出来。 */
+  .VPNavBar.has-sidebar {
+    background-color: var(--vp-nav-bg-color) !important;
+  }
+
+  /* ===== 5) 侧边栏内容：分类整行 + 文章行 =====
+     DOM（VitePress 默认，未改）：
+        nav.nav > .group × N        ← config.mjs 里每个 sidebar 条目 = 一个 .group
+          · 分类条目：.group > section.VPSidebarItem.level-0.collapsible(.collapsed) > (.item + .items)
+          · 散装条目：.group > section.VPSidebarItem.level-0（无 .items，只有 .item 里一个链接）
+     做法：.nav 变成**单列**网格 → 每个 .group 独占一整行；
+           分类项 = 整行的"条目条"（左标题 + 右侧折叠箭头），展开时文章列表落在它下方。
+     ⚠️ 单列布局下，下面几条"跨满整行"（grid-column: 1 / -1）恒为真、等于空操作 ——
+        特意保留：将来若要改回多列，只改 grid-template-columns 即可，不用重写这堆选择器。
+     ⚠️ 例外：本项目 sidebar 写成「按路径的对象」时，`.nav` 里**第一个 .group 是个空壳** ——
+        它没有自己的 `.item`，只有 `.items` 装着「目录 / 个人培养方案查看」这类散装项（它们因此是
+         level-1，走下面"文章行"那套样式）。脚本里对这个 group 取 `.item` 会拿到 null，务必判空。 */
+  .VPSidebar .nav {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+    align-content: start;
+  }
+  /* .group 默认自带"上内距 + 组间分隔线 + 写死宽度"，网格布局下全部作废 */
+  .VPSidebar .nav .group {
+    width: auto !important;
+    min-width: 0;
+    padding: 0 !important;
+    border-top: 0 !important;
+  }
+  /* 散装（无分类）条目分组：整行铺开，当普通列表看 */
+  .VPSidebar .nav .group:not(:has(> .VPSidebarItem > .item)) {
+    grid-column: 1 / -1;
+  }
+  /* 展开中的分类分组：跨满整行（单列下本就满行，留作多列布局的保险） */
+  .VPSidebar .nav .group:has(> .VPSidebarItem.level-0.collapsible:hover),
+  .VPSidebar .nav .group:has(> .VPSidebarItem.level-0.collapsible:not(.collapsed)) {
+    grid-column: 1 / -1;
+  }
+  /* 分类项默认的 24px 下内距在网格里会撑出大片空白 */
+  .VPSidebar .nav .VPSidebarItem.level-0 {
+    padding-bottom: 0 !important;
+  }
+
+  /* — 分类条目条本体（整行） — */
+  .VPSidebar .nav .VPSidebarItem.level-0.collapsible > .item {
+    box-sizing: border-box;
+    width: 100%;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    text-align: left;
+    /* 八轮：跟着面板一起半透明（不然整条侧边栏里只有这几个条目条是"实心白块"，
+       跟磨砂面板拼在一起会像贴错了图）。它已在磨砂面板之内 → 不必再挂 backdrop-filter，
+       多糊一层只是白花钱（面板那一层已经把照片糊过一遍了）。 */
+    background-color: var(--article-glass-chip);
+    border: 1px solid var(--vp-c-divider);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.18s ease, background-color 0.18s ease;
+    /* 系统"减少动态效果"开着时也要保住这点反馈（反压 base.css 的 0s） */
+    transition-duration: 0.18s !important;
+  }
+  .VPSidebar .nav .VPSidebarItem.level-0.collapsible > .item .text {
+    /* flex:1 → 文字吃掉剩余宽度，把箭头顶到最右缘 */
+    flex: 1 1 auto;
+    padding: 0;
+    font-size: 13px;
+    line-height: 20px;
+    font-weight: 600;
+    color: var(--vp-c-text-1);
+    overflow-wrap: anywhere;
+  }
+  /* 折叠箭头：整行条目得让人看出"这行可以展开" → 恢复默认主题的箭头，压小并贴右缘。
+     ⚠️ 默认主题的箭头旋转只认 `.collapsed` 类，而 hover 展开**不会**摘掉这个类（见下一条）。 */
+  .VPSidebar .nav .VPSidebarItem.level-0.collapsible > .item .caret {
+    display: flex;
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+  }
+  .VPSidebar .nav .VPSidebarItem.level-0.collapsible > .item .caret-icon {
+    font-size: 14px;
+  }
+  /* ⚠️ 展开态必须显式把箭头转下来：默认主题靠 `.collapsed` 类切 0° / 90°，
+     而本方案是"hover 即展开"——hover 时 `.collapsed` 类还在（能点开但类名不变），
+     不补这条就会"列表已经铺开、箭头还指着右边"。 */
+  .VPSidebar .nav .VPSidebarItem.level-0.collapsible:hover > .item .caret-icon,
+  .VPSidebar .nav .VPSidebarItem.level-0.collapsible:not(.collapsed) > .item .caret-icon {
+    transform: rotate(90deg);
+  }
+  /* 当前页所在的分类 —— 条目条描一圈品牌色 */
+  .VPSidebar .nav .VPSidebarItem.level-0.collapsible.has-active > .item,
+  .VPSidebar .nav .VPSidebarItem.level-0.collapsible:hover > .item {
+    border-color: var(--vp-c-brand-1);
+  }
+
+  /* — 展开态：文章列表落在条目条**下方** —（条目条与 .items 是块级兄弟，天然上下堆叠） */
+
+  /* — 分类里的文章列表：默认收起，hover 或点开后展开 — */
+  .VPSidebar .nav .VPSidebarItem.level-0.collapsible > .items {
+    display: none !important;
+    margin-top: 0;
+    min-width: 0;
+    padding: 0;
+  }
+  .VPSidebar .nav .VPSidebarItem.level-0.collapsible:hover > .items,
+  .VPSidebar .nav .VPSidebarItem.level-0.collapsible:not(.collapsed) > .items {
+    display: block !important;
+    /* 与上方条目条留 6px；整体右缩 8px → 视觉上"挂在"分类条目条下面 */
+    margin-top: 6px;
+    padding-left: 8px;
+  }
+
+  /* — 散装（非分类）条目：一行文字，但左缘与分类条目条内的文字对齐 —
+     11px = 分类条目条的内衬 10 + 它的 1px 描边，这样两边文字起点对齐。
+     ⚠️ 这类条目本身没有 .collapsible，别把上面的卡片底色照抄过来（会分不清哪些能展开）。 */
+  .VPSidebar .nav .VPSidebarItem.level-0:not(.collapsible) > .item {
+    padding: 0 11px;
+    border-radius: 8px;
+    transition: background-color 0.18s ease;
+    transition-duration: 0.18s !important;
+  }
+  .VPSidebar .nav .VPSidebarItem.level-0:not(.collapsible) > .item:hover {
+    background-color: var(--vp-c-default-soft);
+  }
+
+  /* — 文章行（分类内的文章 + 散装文章，都是 level-1） — */
+  .VPSidebar .nav .VPSidebarItem.level-1 > .item {
+    padding: 3px 8px;
+    border-radius: 8px;
+    transition: background-color 0.18s ease;
+    transition-duration: 0.18s !important;
+  }
+  .VPSidebar .nav .VPSidebarItem.level-1 > .item:hover {
+    background-color: var(--vp-c-default-soft);
+  }
+  .VPSidebar .nav .VPSidebarItem.level-1 > .item .text {
+    padding: 2px 0;
+    font-size: 13px;
+    line-height: 20px;
+  }
+}

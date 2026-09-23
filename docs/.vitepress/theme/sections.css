@@ -1,0 +1,785 @@
+/* ==========================================================================
+   通用「区块 + 卡片网格」样式表
+   --------------------------------------------------------------------------
+   谁在用：docs/index.md      → 首页的个人游戏通道（分「网页游戏 / 微信小游戏」两组）/ 动态
+           docs/文章专区.md    → 栏目导航卡片（原首页「功能区」，2026.9.21 迁出）
+           docs/友链/index.md  → 友链列表（2026.9.21 新增，竖向头像卡）
+   为什么要单独一个文件：这些规则原先都写在 docs/index.md 的内联 <style> 里，
+       只对首页生效。现在「文章专区」页要用**同一套**卡片，如果各写一份，
+       以后调卡片样式就得改两处、极易漏改 —— 抽到这里后全站只有一份，
+       改一次两个页面同时生效。
+   ⚠️ 维护须知：
+     1) 新增 / 删除 / 改名一个栏目 —— 只改 docs/文章专区.md 里的
+        <a class="article-card" href="...">栏目名</a>，本文件不用动。
+     2) 下面的类名只被上述两个页面使用，其它文章页不受影响。
+     3) 这两个页面分别是 layout: home / page，内容**不经过 .vp-doc**，
+        所以选择器不用刻意加特异性。如果哪天把「文章专区」改成普通文档页
+        （layout: doc），内容会被 .vp-doc 包住，它自带的
+        `.vp-doc p / h1 / a` 规则会盖掉这里的同名属性
+        （表现：卡片变蓝、出现下划线），届时把选择器改成两层写法
+        （如 `.card-grid .article-card`）即可压回去。
+   ========================================================================== */
+
+/* ===== 区块通用外壳 ===== */
+.home-section {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 4.5rem 1.25rem;
+}
+.home-section__title {
+  text-align: center;
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  /* 下面两条是给「文章专区」页（layout: page）补的：
+     默认主题 base.css 把标题的字重 / 行高重置成继承值（400 / 24px），
+     首页那侧由 .vp-doc h2 的 600 / 32px 兜住，不经过 .vp-doc 的页面就会
+     「标题不发粗 + 行高比字号还小」，所以这里显式写死。
+     在首页上这两条会被 .vp-doc h2 覆盖 → 首页表现完全不变。 */
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0 0 0.4rem;
+  color: var(--vp-c-text-1);
+}
+.home-section__sub {
+  text-align: center;
+  color: var(--vp-c-text-2);
+  margin: 0 0 2rem;
+  font-size: 0.95rem;
+}
+
+/* ===== 卡片网格：三列，缝隙小 ===== */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+/* ===== 文章专区卡片 =====
+   ⚠️ 八轮（站长：「把容器都做一些 modulate，让背景可以显现出来」）：
+      底色由不透明的 --vp-c-bg-soft 换成半透明的 --article-glass-card（值在
+      style.css 的「通透度」一节，亮暗各一份）+ backdrop-filter 毛玻璃。
+      卡片背后直接就是页面背景照片（本页没有"大容器"），所以这层是整页通透感的主力。
+      调通透度只动 style.css 的 --article-glass-*，这里不用改。 */
+.article-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+  padding: 1.4rem 1rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 16px;
+  background: var(--article-glass-card);
+  -webkit-backdrop-filter: blur(var(--article-glass-blur));
+  backdrop-filter: blur(var(--article-glass-blur));
+  color: var(--vp-c-text-1);
+  text-decoration: none;
+  font-size: clamp(1rem, 2.4vw, 1.25rem);
+  font-weight: 600;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+.article-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--vp-c-brand-1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  color: var(--vp-c-brand-1);
+}
+
+/* ===== 「文章专区」枢纽页：右上角「隐藏 / 显示」按钮（2026.9.23 新增） =====
+   站长口径：「在文章专区右上角加一个『隐藏』的按钮，按下之后可以隐藏此页面内的文字和按钮
+   （方便看壁纸）」。
+   三件事一起看：
+     ① 按钮本体（.hub-hide-btn）—— 胶囊 + 描边 + 毛玻璃底，沿用全站小按钮那一套语言
+        （.copy-btn / .back-btn），只是底色换成枢纽页卡片同款 --article-glass-card，
+        这样它和卡片摆在同一张照片上观感是一族的；hover 变蓝用 --back-btn-hover
+        （那是"浅底胶囊"专用的对比度正确档，亮暗各一份，见本文件「顶栏返回按钮」一节）。
+     ② 按钮定位 —— .home-section 的绝对定位右上角。⚠️ position:relative **只给本页补**：
+        .home-section 是首页 / 文章专区 / 友链 三页共用的类，加在别处会把那两页也变成
+        包含块（首页那侧有绝对定位的伪元素，会被带偏）。
+     ③ 隐藏态（html.hub-hidden）—— 把本页正文（标题 + 副标题 + 卡片网格）整体淡出。
+        标记在 docs/文章专区.md，类的挂载 / 复位在 theme/index.js 的全局委托里。
+   ⚠️ 隐藏用 opacity + pointer-events，**不用 display:none / visibility** ——
+      保留占位：淡入淡出才有过渡，且页面高度不跳（否则点一下整页抖一下）。
+   ⚠️⚠️ 隐藏规则必须带 `:has(.Layout.article-hub-bg)` 收窄：.home-section__title /
+      .home-section__sub / .card-grid 都是**首页共用的类名**，只写 html.hub-hidden
+      会把首页的同名元素一起藏掉（那页没有 .Layout.article-hub-bg 兜着）。
+   ⚠️ 按钮自己**不藏**（它是唯一的"还原"入口），顶栏也不藏（那不属于"本页内"的东西，
+      留着还能从这里点去别的页）。 */
+html:has(.Layout.article-hub-bg) .home-section { position: relative; }
+.hub-hide-btn {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.25rem;
+  z-index: 3; /* 压在卡片网格之上（网格是后来的兄弟节点，不给层级会被盖住） */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 999px;
+  background: var(--article-glass-card);
+  -webkit-backdrop-filter: blur(var(--article-glass-blur));
+  backdrop-filter: blur(var(--article-glass-blur));
+  color: var(--vp-c-text-1);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease,
+    transform 0.18s ease, opacity 0.45s ease;
+  /* 系统「减少动态效果」下也要保住这点反馈（反压 base.css 的 0s；与 .copy-btn 同一口径） */
+  transition-duration: 0.18s, 0.18s, 0.18s, 0.18s, 0.45s !important;
+  -webkit-tap-highlight-color: transparent;
+}
+.hub-hide-btn:hover {
+  background: var(--vp-c-default-soft);
+  color: var(--back-btn-hover);
+  border-color: var(--back-btn-hover);
+}
+.hub-hide-btn:active { transform: scale(0.96); }
+.hub-hide-btn:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: 2px; }
+/* 图标：两枚内联 SVG（睁眼 / 闭眼），同一时刻只显示一枚 —— 用 CSS 切，省一次 JS 改结构的麻烦。
+   语义（"隐藏"还是"显示"）由按钮上的 aria-label + 文字一起担着，图标只是辅助。 */
+.hub-hide-btn__icon {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+.hub-hide-btn__icon--eye-off { display: none; }
+html.hub-hidden .hub-hide-btn__icon--eye { display: none; }
+html.hub-hidden .hub-hide-btn__icon--eye-off { display: block; }
+
+/* —— 隐藏态：正文整体淡出（保留占位，见上面 ⚠️） —— */
+html:has(.Layout.article-hub-bg) .home-section__title,
+html:has(.Layout.article-hub-bg) .home-section__sub,
+html:has(.Layout.article-hub-bg) .card-grid {
+  transition: opacity 0.45s ease;
+  /* 同上：减少动态效果下也保住这次淡出（否则"啪"一下消失，没有"藏起来"的观感） */
+  transition-duration: 0.45s !important;
+}
+html.hub-hidden:has(.Layout.article-hub-bg) .home-section__title,
+html.hub-hidden:has(.Layout.article-hub-bg) .home-section__sub,
+html.hub-hidden:has(.Layout.article-hub-bg) .card-grid {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ===== 个人游戏通道大容器 ===== */
+.game-card {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.game-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--vp-c-brand-1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+/* ⚠️ 首页正文被包在 .vp-doc 里 → `.vp-doc a`=(0,1,1) 盖掉 `.game-card`=(0,1,0) 的
+   color / text-decoration / font-weight：整张卡片（连游戏名一起）被染成品牌蓝 +
+   下划线，看着像一串坏掉的链接（对比「微信小游戏」那组是 <div>，不受影响，
+   两组摆一起会明显不齐）。这里用两层选择器 (0,2,0) 把「卡片是卡片、不是正文链接」写回来。
+   ⚠️ 以后卡片里再加文字，别在子元素上依赖「继承颜色」以外的假设 —— 由这条兜住。 */
+.home-games .game-card {
+  color: var(--vp-c-text-1);
+  text-decoration: none;
+  font-weight: inherit;
+}
+.home-games .game-card:hover { color: var(--vp-c-text-1); }
+.game-thumb {
+  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+  background: linear-gradient(135deg, var(--vp-c-bg-alt, #f2f3f5) 0%, var(--vp-c-bg-soft) 100%);
+  color: var(--vp-c-text-2);
+  font-size: 0.85rem;
+  text-align: center;
+}
+/* 图片占位提示：把 <img> 放进 .game-thumb 即自动替换。
+   ⚠️ 首页正文里的 <img src="/assets/img_game/x.png"> 会被 Vite 打包成
+   /assets/x.<hash>.png（实测：transformAssetUrls 对根路径也生效，构建后 dist 里
+   只有哈希名、没有原名目录）—— 所以别指望靠 CI 的 `cp -r docs/assets/.` 兜底，
+   也别为了"路径对不对"去改写法，构建产物里看 src 才是准的。 */
+.game-thumb::before { content: "图片占位（待添加）"; }
+.game-thumb:has(img)::before { content: ""; }
+.game-thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+/* 游戏封面图（.game-thumb__cover）：素材本身就是 16:9，和 .game-thumb 的宽高比一致，
+   所以直接铺满盒子最好看 —— 内边距归零（否则封面四周会留 1rem 的渐变底板，
+   像给截图加了相框），并改用 cover 兜住万一素材比例不完全等于 16:9 的情况。
+   ⚠️ 只作用于带 .game-thumb__cover 的图；「微信小游戏」的小程序码走上面的
+   object-fit: contain（二维码必须整张可见，cover 会裁掉定位点）。
+   ⚠️ 选择器要写 `.game-thumb img.game-thumb__cover`（0,2,1）：上面那条 `.game-thumb img`
+   是 (0,1,1)，裸 class (0,1,0) 压不过它 —— 实测 computed object-fit 会保持 contain。 */
+.game-thumb:has(.game-thumb__cover) { display: block; padding: 0; }
+.game-thumb img.game-thumb__cover { display: block; width: 100%; height: 100%; object-fit: cover; }
+.game-info { padding: 0.9rem 1rem 1.1rem; }
+.game-name { font-weight: 600; font-size: 1.05rem; }
+.game-meta { margin-top: 0.25rem; font-size: 0.82rem; color: var(--vp-c-brand-1); }
+.game-date { margin-top: 0.2rem; font-size: 0.75rem; color: var(--vp-c-text-2); }
+
+/* ===== 说明块（首页「游戏区说明」+ 友链页「申请友链」共用） =====
+   .note-block 是 .game-note 的**通用别名**：两个类名并列写在同一条规则里，
+   改样式两边一起生效，没有「改一处漏一处」的风险。用别名只是为了让友链页
+   不必去写「游戏区说明」这个和页面语义无关的类名（2026.9.21）。 */
+.game-note,
+.note-block {
+  margin-top: 2rem;
+  padding: 1.2rem 1.4rem;
+  border-left: 3px solid var(--vp-c-brand-1);
+  background: var(--vp-c-bg-soft);
+  border-radius: 8px;
+  color: var(--vp-c-text-2);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+.game-note p,
+.note-block p { margin: 0.3rem 0; }
+/* ⚠️ list-style 必须显式写回来：默认主题 base.css 的 `ol, ul { list-style: none }`
+   是**全局重置**，全站只有 `.vp-doc ol` 那条把它恢复成 decimal。首页的说明块被
+   .vp-doc 包着（序号正常），友链页是 layout: page（不经过 .vp-doc）→ 不写这条，
+   序号会静默消失，两条 <li> 看着就是两行普通文字（2026.9.21 实测 computed = none）。
+   顺带：序号是画在 padding-left 里的，别把这个内边距删掉。 */
+.game-note ol,
+.note-block ol { margin: 0.3rem 0; padding-left: 1.4rem; list-style: decimal; }
+/* 首页「游戏区说明」并入「微信小游戏」网格，做成游戏卡同款卡片（.game-card--note，
+   2026.9.21 晚：此前独立在网格外整行铺宽，按站长要求改为网格内一列、与同行卡等高）。
+   宽度 = 网格一列；同一行自动等高（grid 默认 stretch）；内容块在卡内垂直居中。 */
+.home-games .game-card--note .game-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+/* 说明文字：沿用原 .game-note 的字号/行距/序号（两层选择器压 .vp-doc p/ol） */
+.home-games .game-card--note p {
+  margin: 0.3rem 0;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--vp-c-text-2);
+}
+.home-games .game-card--note ol {
+  margin: 0.3rem 0;
+  padding-left: 1.4rem;
+  list-style: decimal;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--vp-c-text-2);
+}
+/* 列表项里的复制按钮（友链页「申请友链」）：按钮是 inline-flex，靠这条让它
+   和前面的邮箱文字垂直居中对齐；窄屏允许换行后自成一行。 */
+.note-block li .copy-btn { vertical-align: middle; margin-left: 0.2rem; }
+
+/* ===== 作者帐号（首页 .home-accounts） =====
+   结构：.home-accounts > (.home-section__title + .accounts-grid > a.account-card
+         > .account-card__badge + .account-card__body(> __name + __id) + __arrow)
+   一整张卡就是外链，点击新标签页打开；视觉语言沿用上面的卡片（描边 + 16px 圆角 + 软底色 + hover 上移）。
+   ➜ 增删账号只改 docs/index.md；这里不用动。
+   ⚠️ 首页正文被包在 .vp-doc 里 → `.vp-doc a`=(0,1,1) 会把卡片染成品牌蓝 + 下划线
+      （同 .game-card 踩过的坑），所以颜色/下划线/字重都用两层选择器 (0,2,0) 写回来。 */
+.home-accounts .accounts-grid {
+  /* 三列（2026.9.22 账号由 2 个增到 3 个，正好一行排满）。
+     每张卡约 352px —— 与下面游戏区 .card-grid 的卡片同宽，整页竖列能对齐。
+     （原先两列的理由是「账号只 2 个，三列会空出一整列」，现在不成立了。）
+     ⚠️ 以后再加减账号：数量 ≤2 或 ≥7 时考虑改回两列；≤900px 已降两列、≤560px 单列。 */
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.home-accounts .account-card {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 16px;
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
+  text-decoration: none;
+  font-weight: inherit;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.home-accounts .account-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--vp-c-brand-1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  color: var(--vp-c-text-1);
+}
+/* 徽标：平台**官方标志**（2026.9.22 由「GH / LC 缩写文字」改成图标 —— 顶栏那个
+   GitHub 图标移除后挪到了这里）。
+   造型不变：42px + 12px 圆角方块（不是正圆），和「圆角矩形」这套卡片语言一致。
+   底色默认值仍保留品牌渐变（将来加账号没写 --<平台> 修饰类时也有底色兜底），
+   两个已知平台各自覆盖成**官方品牌色**（见下面两行 modifier）。
+   ⚠️ box-sizing: border-box 是必须的 —— 暗色模式下给 GitHub 补的那圈描边
+      只有在 border-box 下才不会把 42px 撑成 44px。 */
+.home-accounts .account-card__badge {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--vp-c-brand-1) 0%, var(--vp-c-brand-2, var(--vp-c-brand-1)) 100%);
+  color: #fff;
+  user-select: none;
+}
+/* 标志本体（内联 <svg viewBox="0 0 24 24">）：22px 见方、被上面的 flex 居中。
+   只写尺寸不写 fill —— path 上已经是 fill="currentColor"，直接吃 .badge 的 color。
+   （写死 fill 的话以后想改标志颜色就得改 markdown，颜色应该只归 CSS 管。） */
+.home-accounts .account-card__badge svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+/* 官方品牌色（取自 simple-icons）：GitHub #181717、LeetCode #FFA116、bilibili #00A1D6。
+   ⚠️ 这三条与上面的基础规则**同为 (0,2,0)**，靠「书写顺序在后」取胜
+      —— 别把它们挪到基础规则之前，否则底色会被渐变盖掉。
+   ⚠️ bilibili 的标志是**线框式**的（电视外框 + 内部挖空 + 两个小眼睛），
+      白线在 42px 方块里偏细 —— 所以它单独把 svg 放大到 24px（见下面那条规则），
+      否则三方块摆一排时它会显得比 GitHub / LeetCode 单薄。 */
+.home-accounts .account-card__badge--github { background: #181717; }
+.home-accounts .account-card__badge--leetcode { background: #ffa116; }
+.home-accounts .account-card__badge--bilibili { background: #00a1d6; }
+/* bilibili 专属：标志本体放大一档（22 → 24px），抵消线框式图形视觉偏小的问题。
+   只加尺寸、不动其它，所以不影响 GitHub / LeetCode。 */
+.home-accounts .account-card__badge--bilibili svg {
+  width: 24px;
+  height: 24px;
+}
+/* 暗色模式：GitHub 的黑底方块和卡片底（--vp-c-bg-soft ≈ #202127）几乎同色，
+   方块会「消失」、只剩一只白猫飘着 → 底色提亮一档 + 补一圈浅描边把轮廓找回来。
+   （LeetCode 的橙底本身够亮，暗色下不用动。） */
+.dark .home-accounts .account-card__badge--github {
+  background: #2b3138;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+/* 文字块：min-width:0 是下面账号 ID 省略号能生效的前提（flex 子项默认不可缩） */
+.home-accounts .account-card__body {
+  flex: 1;
+  min-width: 0;
+}
+.home-accounts .account-card__name {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.home-accounts .account-card__id {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--vp-c-text-2);
+  font-family: var(--vp-font-family-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 外链箭头：hover 时向右上飘一下，暗示「会跳走」 */
+.home-accounts .account-card__arrow {
+  flex: 0 0 auto;
+  color: var(--vp-c-text-2);
+  font-size: 0.95rem;
+  transition: transform 0.18s ease, color 0.18s ease;
+}
+.home-accounts .account-card:hover .account-card__arrow {
+  color: var(--vp-c-brand-1);
+  transform: translate(2px, -2px);
+}
+
+/* ===== 首页区块的竖直留白（2026.9.21 二次调整：当前顺序为
+   简介(.home-profile) → 作者帐号(.home-accounts) → 动态(.home-status) → 游戏区(.home-games)
+   → 免责声明(.home-disclaimer)，压缩各区块之间的空档） =====
+   为什么不直接改 .home-section：它被首页 / 文章专区 / 友链三个页面共用，
+   动它会把另外两页一起改掉，所以只针对首页那两个区块（.home-games / .home-status）。
+   ⚠️ 首页正文被 VPHomeContent 包在 .vp-doc 里，`.vp-doc h2`=(0,1,1) 给区块标题
+      叠了 margin:48px 0 16px + padding-top:24px + border-top（那条横分隔线就是这么来的）。
+      单层 class 的 .home-section__title=(0,1,0) 压不住它 → 视觉上变成
+      「区块上内距 4.5rem + 标题自带 48px」的双份留白。
+      下面用三层选择器 (0,3,0) 把标题的上边距收回 0（分隔线保留），
+      区块间距统一由各区块自己的 padding 控制。 */
+.home-games.home-section { padding-top: 2rem; padding-bottom: 2rem; }
+/* ⚠️ 这里只能改 `margin-top`（长写），不能写 `margin: 0 0 0.4rem` ——
+   标题的**下**边距原本由 `.vp-doc h2` 给 16px，一写死成 0.4rem 就变成 6.4px，
+   「动态」标题会贴到卡片上（实测踩过）。要保留下边距的原样。 */
+.home-games.home-section .home-section__title,
+.home-status.home-section .home-section__title {
+  margin-top: 0;
+}
+/* 「动态 → 游戏区」空档（2026.9.21 收紧：原来动态下内距走 .home-section 默认的
+   4.5rem，叠上游戏区上内距 2rem = 104px，被反馈「间隙过大」。
+   现在动态在上、游戏区在下 → 动态补 padding-bottom 1.5rem，
+   24px + 32px = 56px（+ 标题自带 24px 上内距到文字），和上方节奏对齐。 */
+.home-status.home-section { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+/* 「作者帐号」夹在简介卡片和动态之间（2026.9.21 深夜新增）。上内距写 3rem 而不是 1.5rem：
+   这一块紧贴简介卡片（.home-profile 的 padding-bottom 是 0），上面那条横分隔线到
+   上一块底边的距离 = 本节 padding-top —— 写 1.5rem 时只有 24px，肉眼上比
+   下方「账号卡 → 动态」的 48px 明显更挤，上下不对称；写 3rem 后两处都是 48px。
+   下内距 1.5rem（24px）+ 动态的上内距 24px = 48px，与全页节奏同档。 */
+.home-accounts.home-section { padding-top: 3rem; padding-bottom: 1.5rem; }
+.home-accounts.home-section .home-section__title { margin-top: 0; }
+/* ⚠️ 别给这块套 .home-profile —— 那个 class 是简介卡片的（3.5rem 上内距 + 头像两栏）：
+   挂到普通区块上会凭空多出 56px 空白，实测把「简介 → 动态」从 48px 顶到 197px，
+   中间还空着一段 161px 高、只有标题没有内容的空区块（2026.9.21 修掉的那个半成品）。 */
+/* 同理 .home-section__sub 的 margin 也被 `.vp-doc p`=(0,1,1) 换成 16px 0，
+   这里压回自己声明的 2rem，让「副标题 → 第一组卡片」的间距是确定值 */
+.home-games.home-section .home-section__sub {
+  margin: 0 0 2rem;
+}
+
+/* ===== 游戏分组（个人游戏通道 → 网页游戏 / 微信小游戏） =====
+   结构：.home-games > .game-group > (.game-group__title + .card-grid)
+   组标题左对齐 + 品牌色竖条，和上方居中的区块标题拉开层级。
+   ➜ 增删分组只改 docs/index.md；分组标题文字在 <h3 class="game-group__title"> 里。 */
+.home-games .game-group + .game-group { margin-top: 2.25rem; }
+.home-games .game-group__title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 0.9rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0;
+  color: var(--vp-c-text-1);
+}
+/* ⚠️ 必须写成两层选择器 (0,2,0) 才压得住首页的 `.vp-doc h3`=(0,1,1)，
+   否则这个标题会被换成 20px 字号 / 28px 行高 / 32px 上边距。 */
+.home-games .game-group__title::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 4px;
+  height: 1.1em;
+  border-radius: 2px;
+  background: var(--vp-c-brand-1);
+}
+
+/* ===== 友链列表（docs/友链.md，layout: page） =====
+   竖向排列：一条友链 = 一张卡片，卡片内 = 圆形头像 + 右侧三行文字
+   （名称 / 网站名字 / 网站URL）。整张卡片就是外链，点击新标签页打开。 */
+.friend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  /* 竖向排列，铺满 1120px 会显得空旷 → 收窄并居中。
+     以后想改成两列：换成 .card-grid 那套 grid 即可。 */
+  max-width: 720px;
+  margin: 0 auto;
+}
+.friend-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 16px;
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
+  text-decoration: none;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.friend-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--vp-c-brand-1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+/* 头像：正方形，overflow:hidden + 50% 圆角裁成圆形。
+   没放 <img> 时露出 __initial 的首字；放了 <img> 就绝对定位铺满并盖住首字。 */
+.friend-avatar {
+  position: relative;
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--vp-c-brand-1) 0%, var(--vp-c-brand-2, var(--vp-c-brand-1)) 100%);
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 600;
+  user-select: none;
+}
+.friend-avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.friend-avatar:has(img) .friend-avatar__initial { display: none; }
+
+/* 文字块：min-width:0 是让下面 URL 的省略号能生效的前提（flex 子项默认不可缩） */
+.friend-info {
+  flex: 1;
+  min-width: 0;
+}
+.friend-name {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+.friend-site {
+  margin-top: 0.15rem;
+  font-size: 0.88rem;
+  color: var(--vp-c-brand-1);
+}
+.friend-url {
+  margin-top: 0.1rem;
+  font-size: 0.78rem;
+  color: var(--vp-c-text-2);
+  font-family: var(--vp-font-family-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ===== 「本站链接」行 + 复制按钮（友链页） ===== */
+/* 行本体复用 .home-section__sub 的「居中 + 次要文字色」，这里只补「地址与按钮同一行、
+   垂直居中对齐；窄屏按钮换行到地址下面」。 */
+.site-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+/* 复制按钮要取用的文本：.site-link__url = 友链页的站点地址，.copy-source = 邮箱等其它目标。
+   两条规则同源 —— 以后要多一个复制目标，给它挂 .copy-source 就够了。
+   等宽字体 + 允许手动选中（按钮只是更省事，不剥夺原本的框选复制）。 */
+.site-link__url,
+.copy-source {
+  font-family: var(--vp-font-family-mono);
+  user-select: text;
+}
+.copy-btn {
+  /* 按钮底色写成变量：图标的「前片」要用同色去遮住后片，两处颜色必须同源 */
+  --copy-btn-bg: var(--vp-c-bg-soft);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 999px;
+  background: var(--copy-btn-bg);
+  color: var(--vp-c-text-2);
+  font-size: 0.82rem;
+  font-family: inherit;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+  /* 系统「减少动态效果」下也要保住这点按下反馈（反压 base.css 的 0s） */
+  transition-duration: 0.18s !important;
+  -webkit-tap-highlight-color: transparent;
+}
+.copy-btn:hover {
+  --copy-btn-bg: var(--vp-c-default-soft);
+  color: var(--vp-c-brand-1);
+  border-color: var(--vp-c-brand-1);
+}
+.copy-btn:active { transform: scale(0.96); }
+.copy-btn:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: 2px; }
+/* 图标：两个叠在一起的圆角方块（后片 ::before，前片 ::after 用按钮底色挖出重叠） */
+.copy-btn__icon {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+}
+.copy-btn__icon::before,
+.copy-btn__icon::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+}
+.copy-btn__icon::before { left: 0; top: 3px; }
+.copy-btn__icon::after { right: 0; top: 0; background: var(--copy-btn-bg); }
+/* 回执态：由 theme/index.js 挂 .is-copied / .is-failed，约 1.6s 后自动摘掉 */
+.copy-btn.is-copied {
+  --copy-btn-bg: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  border-color: var(--vp-c-brand-1);
+}
+.copy-btn.is-failed {
+  --copy-btn-bg: var(--vp-c-danger-soft);
+  color: var(--vp-c-danger-1);
+  border-color: var(--vp-c-danger-1);
+}
+
+/* ===== 友链页「申请友链」区块 ===== */
+/* 整页只有一个 <section class="home-section">，三块（本站链接 / 友情链接 / 申请友链）
+   都在里面 → 块与块之间没有 section 的内边距可用，间距得由区块自己出。
+   （原来是紧跟在友链列表后面挂一个裸 <br> 撑高度：换行高度随字号/行高漂移，
+     而且它不属于任何语义 → 换成标题所在区块的上边距。） */
+.apply-friend { margin-top: 3.5rem; }
+/* 说明块收窄到和上方友链列表同宽（.friend-list = 720px）并居中：
+   原来铺满 1120px，文字只占左边一小条、右侧大片留白，视觉上「容器过长」。
+   ⚠️ margin 必须连 top 一起写（.note-block 自带 margin-top:2rem，
+   这里用 shorthand 覆盖时把它保留住）。 */
+.apply-friend .note-block {
+  max-width: 720px;
+  margin: 2rem auto 0;
+}
+
+/* ===== 「本站建设」页 联系方式·微信二维码 =====
+   结构：.contact-qr > img（图片在 docs/assets/img_info/wechat.jpg，`.md` 里写**绝对路径** /assets/…）。
+   ⚠️ 文档页正文被 .vp-doc 包着 → `.vp-doc img` 自带 max-width:100% 但**没有高度约束**，
+   实测二维码原图 133KB / 分辨率偏大，会整幅铺满 752px 正文宽、显得很突兀 →
+   这里显式收成 220px 的小方块，并给白底圆角（二维码本身白底，压深色卡片上更好看）。 */
+.contact-qr { margin: 0.6rem 0 0; }
+.contact-qr img {
+  display: block;
+  width: 220px;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background: var(--vp-c-bg);
+}
+
+/* ===== 动态状态卡片 ===== */
+.status-grid { grid-template-columns: repeat(4, 1fr); }
+.status-card {
+  padding: 1.3rem 1rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 14px;
+  background: var(--vp-c-bg-soft);
+}
+.status-card__title { font-weight: 600; margin-bottom: 0.4rem; color: var(--vp-c-text-1); }
+.status-card__detail { font-size: 0.88rem; color: var(--vp-c-text-2); line-height: 1.5; }
+
+/* ===== 顶栏「返回上一级」按钮（站名 Eddieの小窝 右侧，2026.9.22 新增 / 同日二轮改位） =====
+   结构：button.back-btn > (svg.back-btn__icon + span.back-btn__text)
+   视觉沿用上面的 .copy-btn（胶囊 + 描边 + 软底色 + hover 变色）—— 全站小按钮只留一套语言。
+   ⚠️ 标记不写在任何 .md 里：由 theme/Layout.vue 通过默认主题的 **#nav-bar-title-after**
+      插槽注入 —— 该插槽在 VPNavBarTitle 的 <a class="title"> 内部、站名 <span> 之后，
+      所以天然紧贴「Eddieの小窝」右侧；又因为首页 / 文章专区 / 友链 也会渲染这个插槽，
+      Layout.vue 里用 frontmatter.layout 过滤，只让文档页出现。
+      改位历史：① 最初在「文章专区」枢纽页左上角 → ② 挪进每篇文章正文标题上方
+      （#doc-before，代价是把标题下推约 47px）→ ③ 现在挪进顶栏站名右边。
+   ⚠️ 插槽在 <a> 里面 → 点按钮会冒泡到链接、默认动作是跳回首页；
+      theme/index.js 的委托里已 preventDefault()，**不要删那一行**。
+   ⚠️ 它是 .title（display:flex / align-items:center）的最后一个子项 → 垂直居中白拿；
+      但要自己给 flex:0 0 auto（别被挤扁）与 margin-left（与站名的间距）。
+   ⚠️ hover 变色的取色逻辑见下面 --back-btn-hover 的注释（不能直接抄 --vp-nav-item-active）。
+   ⚠️ 点击逻辑不在这里：在 .vitepress/theme/index.js 的全局委托里。
+      （页面 <script setup> 里的监听会随页面卸载失效 —— 门禁 / 复制按钮都踩过这个坑。）
+      沿站内来路后退；没有来路则按 URL 推出"所属栏目首页"；再兜底「文章专区」。
+      页面可用 data-back-fallback 手动指定兜底地址（Layout.vue 里那个按钮故意不写）。 */
+:root {
+  /* hover 变蓝 —— 与顶栏模块（Home / 文章专区 / 友链 / 亮暗开关）**同一套色板**，
+     但不能直接写 var(--vp-nav-item-active)，原因：
+       顶栏模块是**反色底**（亮色主题里是深底 + 浅蓝 hover），
+       本按钮是**浅底胶囊**（--vp-c-bg-soft）→ 亮色主题里把浅蓝 #8ab4ff 写在浅底上
+       对比度只有 1.6:1，基本看不见。
+     所以按"同一套色板、取对比度正确的那一档"映射：亮色 → 深蓝 #2f5fd0；
+     暗色（.dark，胶囊变深底）→ 浅蓝 #8ab4ff。两个值都取自顶栏模块那套 --vp-nav-item-active。 */
+  --back-btn-hover: #2f5fd0;
+}
+.dark {
+  --back-btn-hover: #8ab4ff;
+}
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  /* 顶栏里必须不缩水，且与站名留出间距（站名那 28px margin-left 是站名自己的左边距） */
+  flex: 0 0 auto;
+  margin-left: 12px;
+  padding: 0.45rem 1.15rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 999px;
+  background: var(--vp-c-bg-soft);
+  /* 默认就用正文主色 + 加粗：小灰字太容易被整屏正文淹没（2026.9.22 用户反馈"做大、做明显"） */
+  color: var(--vp-c-text-1);
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+  /* 系统「减少动态效果」下也要保住这点反馈（反压 base.css 的 0s） */
+  transition-duration: 0.18s !important;
+  -webkit-tap-highlight-color: transparent;
+}
+.back-btn:hover {
+  background: var(--vp-c-default-soft);
+  color: var(--back-btn-hover);
+  border-color: var(--back-btn-hover);
+}
+.back-btn:active { transform: scale(0.96); }
+.back-btn:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: 2px; }
+/* 箭头图标：用内联 SVG（不是 CSS 边框拼的）—— 16×16 的格子、笔画居中，
+   不受 transform 影响，缩放/居中都可预期。stroke 用 currentColor → 跟着按钮 hover 变色。 */
+.back-btn__icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+/* ⚠️ 768~959px 是本站顶栏**最挤**的一段：标题（含 28px 左边距）+ 居中菜单组（Home /
+   文章专区 / 友链 三个 96px 胶囊，横跨 W/2 两侧各约 160px）+ 溢出菜单 "···" 全都在，
+   而这一段 `.content` 又不吃侧边栏那份左内边距（那是 ≥960px 才有的）。
+   实测（视口 774）：带文字的按钮右缘 323.9 已经压进 Home 胶囊（左缘 227）里 **96.9px**，
+   截图里「返回上一级」被 Home 挡掉一半。
+   而这一段能匀给按钮的空间只有约 39px（= Home 左缘 224 − 站名右缘 173 − 间距），
+   五个汉字怎么缩都放不下 → 这一段**只留箭头**，收成 32px 的圆胶囊（描边 / 底色 /
+   hover 变色全部照旧，只是省掉文字；语义靠 button 的 aria-label + title 兜着）。
+   <768px 反而有位置：那一段菜单项整组隐藏、只剩右侧汉堡，实测按钮右缘 315.9 距汉堡左缘
+   319 仍有余量 → 文字照常显示。 */
+@media (min-width: 768px) and (max-width: 959px) {
+  .back-btn {
+    margin-left: 8px;
+    /* 正方形图标按钮：宽高都写死 30（去掉竖向 padding 后靠 height 撑，
+       否则只剩图标那 14px 高、变成一条细长条 —— 实测踩过） */
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+  }
+  .back-btn__text { display: none; }
+  .back-btn__icon {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 900px) {
+  .card-grid { grid-template-columns: repeat(2, 1fr); }
+  .status-grid { grid-template-columns: repeat(2, 1fr); }
+  /* 作者帐号：三列在这个宽度下每张只剩约 270px，徽标 + 两行文字会挤
+     → 跟着 .card-grid 一起降到两列 */
+  .home-accounts .accounts-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .card-grid { grid-template-columns: 1fr; }
+  .status-grid { grid-template-columns: 1fr; }
+  /* 作者帐号：窄屏单列，账号 ID 才不会被省略号截断（三列时每张卡只剩约 160px，
+     连 UID 都放不下） */
+  .home-accounts .accounts-grid { grid-template-columns: 1fr; }
+  .home-section { padding: 3rem 1rem; }
+  /* 窄屏把友链卡片收紧一点，避免头像 + 三行文字横向挤爆 */
+  .friend-card { gap: 0.8rem; padding: 0.85rem 1rem; }
+  .friend-avatar { width: 52px; height: 52px; font-size: 1.25rem; }
+  /* 「本站建设」联系方式·微信二维码：窄屏跟着缩，别顶满整行 */
+  .contact-qr img { width: 180px; }
+}

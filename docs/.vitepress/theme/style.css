@@ -1,0 +1,991 @@
+/* ==========================================================================
+   顶栏（navbar）定制：加高 + 内容放大 + 内容往中间靠
+   说明：默认主题用 --vp-nav-height 统一控制整条导航栏高度（含标题/菜单行高、
+        页面内容顶部留白），因此加高只需覆盖该变量即可全局生效。
+   ========================================================================== */
+
+/* 1) 加高顶部栏目：默认 64px → 80px（约 +25%）。
+      写在 :root 与 .dark 两个作用域，避免暗色模式失效。 */
+:root {
+  --vp-nav-height: 80px;
+}
+.dark {
+  --vp-nav-height: 80px;
+}
+
+/* 2) 站点标题（左侧 "Eddieの小窝"）放大：默认 16px → 20px；
+      并整体向右移一点（默认贴容器左缘，2026.9.21 按反馈加 28px 左边距） */
+.VPNavBarTitle .title {
+  font-size: 20px !important;
+  margin-left: 28px !important;
+}
+
+/* 3) 导航菜单项（右侧 Home 等）文字放大：默认 14px → 17px → 19px（2026.9.21 二轮）。
+       ⚠️ 2026.9.21 三轮：原本这里还有 padding，现在内边距由第 6 节「统一容器」接管
+          （容器是写死尺寸的圆角长方形，内容靠 flex 居中，不再靠 padding 撑）。 */
+.VPNavBarMenuLink {
+  font-size: 19px !important;
+}
+
+/* 4) 右上角社交图标（github）放大：默认 20px → 26px（2026.9.21 二轮）。
+      ⚠️ 历史坑：VitePress 1.6 的社交图标**不是 <svg>**，而是 mask 图标 span
+      （.vpi-social-github，见 VPSocialLink.vue）—— 之前写 .VPNavBarSocialLinks svg
+      一直没命中（选择器落空、无任何效果），必须选 span 本体。
+      ⚠️ 2026.9.22：顶栏的 GitHub 已整条移除（config.mjs 的 socialLinks 删掉了，
+      GitHub 挪到首页「作者帐号」区）→ 本条与下面 6.3 一并**处于休眠状态**，
+      页面上没有 .VPNavBarSocialLinks 这个元素。保留不删：以后要是再挂社交图标，
+      这两块（尺寸 + 容器造型）直接就能用，不用重新踩一遍。 */
+.VPNavBarSocialLinks [class^='vpi-social-'] {
+  width: 26px !important;
+  height: 26px !important;
+}
+
+/* 4.1) 亮暗切换按钮（胶囊开关）整体放大 1.5 倍：
+       ⚠️ 2026.9.21 三轮改过缩放对象：从「容器」.VPNavBarAppearance 换成「开关本体」
+          .VPSwitchAppearance。因为容器现在是一个**写死尺寸**的反色圆角长方形
+          （见第 6 节），再对容器做 scale 会让它看起来比另外两项大一圈、破坏"一样大"。
+          开关本体是 40×22 的轨道，对它等比缩放最稳，不用逐个改内部尺寸。
+          1.5 × 40×22 = 60×33，放进 76×44 的容器里四周还剩 8 / 5.5px。 */
+.VPSwitchAppearance {
+  transform: scale(1.5);
+  /* 开关自身的三处配色也按主题分档（--vp-nav-switch-* 定义在 :root / .dark）。
+     ⚠️ 默认主题这三项是给"页面底色"配的（浅色主题白钮、暗色主题黑钮）；
+        现在开关坐在**容器**上，容器明暗跟主题一致了，钮就得按容器重取，
+        否则深色容器上顶个黑钮 = 开关糊成一块。 */
+  --vp-input-switch-bg-color: var(--vp-nav-switch-track);
+  --vp-input-border-color: var(--vp-nav-switch-border);
+  --vp-c-neutral-inverse: var(--vp-nav-switch-knob);
+}
+/* 圆钮里的日/月图标：默认主题给的是 --vp-c-text-2（.dark 换成 --vp-c-text-1），
+   那是"深色图标配浅底"的假设；钮现在亮色模式是黑、暗色模式是白 → 反着给。
+   选择器凑够 4 个 class 写成 (0,5,0)，才压得住 VPSwitch.vue 里那条
+   `.dark .icon [class^='vpi-']`（(0,4,0)，别只写 .icon 那一层）。 */
+.VPNavBar .VPNavBarAppearance .VPSwitchAppearance .icon [class^='vpi-'] {
+  color: var(--vp-nav-switch-icon);
+}
+
+/* 5) 顶栏内容往中间靠：右侧菜单区默认贴右（flex-end），改为水平居中，
+      让导航项从右边缘内移到屏幕中部附近。 */
+.VPNavBar .content-body {
+  justify-content: center !important;
+}
+
+/* 5.1) ≥768px：让菜单区横跨整条导航栏再居中，
+      即以「视口宽度」为基准居中（默认是标题右侧~右边缘的区间内居中，圆心偏右）。
+      注意断点取 768 而不是 960：菜单项本身在 <768px 就 display:none 了，
+      768~959px 区间菜单仍然可见，同样需要居中（用户视口常处于这个区间，
+      尤其开着 DevTools 停靠时视口会被压窄）。 */
+@media (min-width: 768px) {
+  .VPNavBar .content {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    /* 清掉默认主题在有侧边栏页面加的左右内边距，保证按全宽居中 */
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+/* 5.2) <768px：菜单项本身已隐藏（只剩汉堡按钮），居中无意义，恢复贴右 */
+@media (max-width: 767px) {
+  .VPNavBar .content-body {
+    justify-content: flex-end !important;
+  }
+}
+
+/* 5.3) 768~959px 且有侧边栏的页面：汉堡按钮也在内容区里，
+      用 margin-left:auto 把它锚回右边缘，避免跟着菜单一起被居中。 */
+@media (max-width: 959px) {
+  .VPNavBar .hamburger {
+    margin-left: auto;
+  }
+}
+
+/* 6) 关键修复：导航栏里的搜索框占位 div（.search）自带 flex-grow:1，
+      未配置搜索时它是个空的占位元素，却会吃掉全部剩余宽度，
+      把菜单（Home/github）顶到最右边——justify-content:center 因此永远失效。
+      将其归零后，居中才能真正生效。 */
+.VPNavBar .content-body .search {
+  flex-grow: 0 !important;
+}
+
+/* 6) 给顶栏右侧内容项（导航链接 / 亮暗开关 / 社交图标）加圆角容器：
+      容器配色**跟随当前亮暗模式**（2026.9.22 九轮对调后）——
+      亮色主题 = 浅底 + 深字，暗色主题 = 深底 + 浅字。
+      历史：对调前这里是"反色容器"（底色与主题**相反**），当初的理由是
+      "顶栏背后既可能是页面底色、也可能是首屏那张偏暗的照片，反色最保险"；
+      站长按实际观感要求把两套整体对调，于是改成跟主题走。
+      —— 亮/暗两组取值和踩过的坑写在下面 `:root` / `.dark` 那两块变量里。
+
+      ⚠️ 2026.9.21 三轮：各项统一为**等尺寸的圆角长方形**（之前是各自大小的胶囊）。
+         尺寸 / 圆角 / 间距全部由下面这组变量驱动，想整体调大小只改这里：
+             --vp-nav-item-w / -h / -radius / -gap
+         宽度写死 → "一样大"是硬保证；菜单项另外加了 min-width:fit-content，
+         以后加了更长的导航文字也不会被卡片裁掉（那一项会自己变宽，其余仍等宽）。
+      ⚠️ 2026.9.21 四轮（顶栏新增「文章专区」菜单项）：
+         —— 宽度 76px → 96px。原因：19px 字号下 4 个汉字正好占 76px，宽度还是 76 时
+            「文章专区」四个字会**顶到圆角边框上**（左右一点余量都没有）。
+            而「四个容器一样大」是硬要求（Home / 文章专区 / 亮暗开关 / GitHub），
+            不能只把这一项单独加宽，只能把共用宽度整体放大到 96px（文字左右各留 10px）。
+         —— 菜单项之间的间距见 6.0)：默认主题 .VPNavBarMenu 没有 gap，
+            两个菜单项不处理会贴在一起。
+      ⚠️ 2026.9.22 六轮（顶栏 GitHub 图标移除、挪进首页「作者帐号」区 —— 按反馈）：
+         —— 社交图标那格没了 → 容器从**四个变三个**（Home / 文章专区 / 亮暗开关），
+            宽度保持 96px 不变（另两项还要用）。所以这条历史说明里的「四个」现在只剩三个，
+            别再照着「四」去数页面上的方块。
+         —— 右侧那一组是**整体居中**的（见 5）/5.1)），少了一个 96px 的格子后，
+            整组会往右平移约 (96+12)/2 ≈ 54px —— 这是居中布局的必然结果，不是错位。
+            对照数据见 .workbuddy/memory 里 2026-09-22 那条记录。
+      ⚠️ 2026.9.21 五轮（按反馈「去掉分割线、间隔缩小」）：
+         —— 两条竖分隔线全部**隐藏**（改法见 6.2)：不能删规则，必须 display:none
+            压掉默认主题自带的那条，否则删了覆盖 = 默认线又回来了）。
+         —— 间距 --vp-nav-item-gap 25px → 12px。25px 是当初专门给竖线留出的
+            空间（线要落在间隙正中），没有线就不需要那么大。
+       ⚠️ 两个必须知道的坑，改这块之前先读 6.2 / 6.3 的注释：
+         ① 容器高度一旦写死，4.1) 原本加在容器上的 transform:scale(1.25) 就会让它
+            看起来比另外两项大一圈 —— 已把缩放挪到开关本体 .VPSwitchAppearance。
+         ② 默认主题在 .VPNavBarAppearance / .VPNavBarSocialLinks 的 ::before 上
+            各长了一条竖分隔线。它们原本是各自容器**内部**的 flex 子项：
+            加在 .VPNavBarAppearance 上的底色会把第一条线包进长方形里
+            （线变成容器内一道竖杠、开关明显偏心）—— **两条线现已统一隐藏**，
+            这块现在只剩「关线 + 调间距」。 */
+:root {
+  /* — 容器尺寸：四项完全一致 — */
+  --vp-nav-item-w: 96px;
+  --vp-nav-item-h: 44px;
+  --vp-nav-item-radius: 13px;
+  /* 各项之间的间距（菜单项之间 / 菜单区↔开关 / 开关↔社交图标 共用这一个值）。
+     2026.9.21 五轮：25px → 12px，同时两条竖分隔线已隐藏。
+     2026.9.22 六轮：社交图标已移除 → 现在实际只有前两处用到它。 */
+  --vp-nav-item-gap: 12px;
+
+  /* — 容器配色（2026.9.22 九轮：亮/暗两套整体对调）—
+     对调前是「反色容器」：亮色模式深底浅字、暗色模式浅底深字。
+     对调后容器配色**跟着主题走**（站长要求"亮色和暗色的颜色互换"）：
+       亮色模式 = 浅底 + 深字（原本只有"亮色模式 + 首屏照片上"才用这一套）
+       暗色模式 = 半透明深底 + 浅字
+     ⚠️ 亮色这块**故意用不透明的 #e4e6e8，而不是照抄暗色模式原来的
+        rgba(245,247,250,0.92)**：那个值压在白色顶栏（--vp-c-bg:#ffffff）上
+        会渲染成 #f6f7fa，与白底只差 1.04:1 —— 方块等于消失，只剩文字浮着。
+        #e4e6e8 对白底是 1.27:1，看得出是个浅灰方块；而它在首屏照片上
+        渲染出来又恰好等于原来那套的观感（实测就是 #e4e6e8）→ 两头都成立。
+     ⚠️ 暗色那块用"12% 白膜"而不是亮色模式原来的深色 rgba(30,30,35,0.82)：
+        后者压在 #1b1b1f 顶栏上算出来是 #1d1d22，与顶栏只差 2/255，
+        方块同样会消失（详见 .workbuddy/memory 2026-09-22 记录）。
+        12% 白膜实测渲染 #3b3b40，对顶栏 1.62:1 —— 暗但不糊。 */
+  --vp-nav-item-bg: #e4e6e8;
+  --vp-nav-item-color: #1b1b1f;
+  /* active / hover 配色：默认品牌蓝（亮 #3451b2 / 暗 #a8b1ff）压在这两个容器上
+     都会糊掉，所以按"同一套色板里取对比度正确的那一档"各分一个：
+     浅底容器 → 深蓝 #2f5fd0；深底容器 → 浅蓝 #8ab4ff。 */
+  --vp-nav-item-active: #2f5fd0;
+
+  /* — 亮暗开关（开关坐在容器里，配色必须跟着容器反过来）—
+     亮色模式容器是浅色 → 深色轨道 + 黑圆钮 + 浅色图标（= 对调前暗色模式那套）。 */
+  --vp-nav-switch-track: rgba(101, 117, 133, 0.16);
+  --vp-nav-switch-border: #3c3f44;
+  --vp-nav-switch-knob: #000000;
+  --vp-nav-switch-icon: #dfdfd6;
+}
+.dark {
+  --vp-nav-item-bg: rgba(255, 255, 255, 0.12);
+  --vp-nav-item-color: #f5f7fa;
+  --vp-nav-item-active: #8ab4ff;
+
+  /* 暗色模式容器是深色 → 深轨道 + 白圆钮 + 深色图标（亮色那套的镜像）。
+     ⚠️ 不能直接吃默认主题 .dark 的开关（黑钮 rgba 白底那套）：黑圆钮压在
+        12% 白膜的深方块上几乎没有轮廓，等于开关糊成一坨。 */
+  --vp-nav-switch-track: rgba(0, 0, 0, 0.3);
+  --vp-nav-switch-border: rgba(0, 0, 0, 0.45);
+  --vp-nav-switch-knob: #f5f7fa;
+  --vp-nav-switch-icon: #1b1b1f;
+}
+
+/* 6.0) 菜单项之间的间距：默认主题 .VPNavBarMenu 是 display:flex 但**没有 gap**，
+      只挂一个菜单项时看不出来；现在有 Home + 文章专区 两项，不补间距的话
+      两个圆角长方形会**紧贴在一起**（看起来像一个宽按钮）。
+      间距沿用上面变量里的 gap，与「菜单区 ↔ 亮暗开关」之间的间距（6.2 的 margin-left）
+      保持一致，于是两条竖分隔线仍然各自落在对应间隙的正中。
+      ⚠️ 组件样式带 [data-v-xxx] 作用域属性（specificity 更高），必须 !important。 */
+.VPNavBarMenu {
+  gap: var(--vp-nav-item-gap) !important;
+}
+
+/* 6.1) 导航菜单项：固定尺寸的圆角长方形，文字水平 + 垂直居中。
+       ⚠️ 坑：默认主题给 .VPNavBarMenuLink 设了 line-height:var(--vp-nav-height)（80px），
+          且父级 .VPNavBarMenu 是 align-items:stretch —— 不处理的话盒子会被撑到整条高度，
+          变成一根"竖色块"而不是长方形。靠 align-self:center + 收窄 line-height 复位。
+          又因为组件样式带 [data-v-xxx] 作用域属性（specificity 更高），
+          尺寸 / padding / line-height 都必须 !important 才压得住。 */
+.VPNavBarMenuLink {
+  align-self: center !important;
+  justify-content: center;
+  box-sizing: border-box !important;
+  width: var(--vp-nav-item-w) !important;
+  min-width: fit-content !important;
+  height: var(--vp-nav-item-h) !important;
+  padding: 0 !important;
+  line-height: 1.5 !important;
+  background-color: var(--vp-nav-item-bg) !important;
+  color: var(--vp-nav-item-color) !important;
+  border-radius: var(--vp-nav-item-radius) !important;
+}
+.VPNavBarMenuLink.active,
+.VPNavBarMenuLink:hover {
+  color: var(--vp-nav-item-active) !important;
+}
+
+/* 6.2) 亮暗开关：容器本身做成反色圆角长方形，开关在正中。
+       （容器尺寸写在 .VPNavBarAppearance 上，开关的 1.5 倍放大在 4.1) 里。
+         注意 .content-body 本来就是 align-items:center，无需 align-self。） */
+.VPNavBarAppearance {
+  position: relative;
+  flex-shrink: 0 !important;
+  justify-content: center;
+  box-sizing: border-box !important;
+  width: var(--vp-nav-item-w) !important;
+  height: var(--vp-nav-item-h) !important;
+  padding: 0 !important;
+  margin-left: var(--vp-nav-item-gap) !important;
+  background-color: var(--vp-nav-item-bg) !important;
+  border-radius: var(--vp-nav-item-radius) !important;
+}
+/* 竖分隔线：隐藏。
+   ⚠️ 坑：默认主题在这两个容器上本来就画了一条线，删掉覆盖等于**把默认线放回来**
+      （而且它长在容器内部、会被底色包住 → 开关偏心）。所以必须显式 display:none。
+   历史：三轮时这条线曾被改成绝对定位、挪到间隙正中（当时保留线、只是改位置）；
+   五轮起按反馈彻底去掉，间距也跟着从 25px 收到 12px。 */
+.VPNavBarAppearance::before {
+  display: none !important;
+}
+
+/* 6.3) 社交图标：容器直接做在 <a class="VPSocialLink"> 本体上
+       （它本来就是 flex 居中的盒子 = 现成容器），比在图标 span 上叠伪元素更干净。
+       图标尺寸沿用上面 4) 的 26px。
+       ⚠️ 它的竖分隔线同样已隐藏（见下，改法同 6.2)；margin-right 的修正**保留**
+          —— 默认 -8px 是给 36px 图标补视觉边距用的，现在是实心盒子不需要负边距。
+       ⚠️⚠️ 2026.9.22：config.mjs 里的 socialLinks 已整条删掉（GitHub 挪进首页
+          「作者帐号」区）→ 本节规则**当前不渲染、不生效**，保留备用。哪天要再挂社交
+          图标，只要在 socialLinks 里加回一项，下面这套「实心圆角方块 + 12px 间距」
+          立刻生效（不用重新踩左边 margin-left 那个坑）。 */
+.VPNavBarSocialLinks {
+  /* 默认 -8px：那是给 36px 图标补视觉边距用的，现在是实心盒子，不需要负边距 */
+  margin-right: 0 !important;
+  /* ⚠️ 坑（五轮去线时才暴露）：「亮暗开关 ↔ GitHub」之间的间隔原本是**那条竖线
+     自己撑出来的** —— 它是容器内部的 flex 子项，margin 16+8 加上 1px 宽度 = 25px，
+     正好等于当时的 --vp-nav-item-gap。把线 display:none 后它不再占位，
+     两个按钮会**紧贴成一块**（实测 gap = 0）。所以间隔必须在这里显式给出，
+     值仍与其它项共用 --vp-nav-item-gap，三处间距才一致。 */
+  margin-left: var(--vp-nav-item-gap) !important;
+}
+/* 竖分隔线：隐藏（默认主题这条线是父级 .VPNavBarSocialLinks 的 ::before 伪元素，
+   必须显式关掉；只删覆盖会把默认线放回来）。 */
+.VPNavBarSocialLinks::before {
+  display: none !important;
+}
+.VPNavBarSocialLinks .VPSocialLink {
+  flex-shrink: 0;
+  box-sizing: border-box !important;
+  width: var(--vp-nav-item-w) !important;
+  height: var(--vp-nav-item-h) !important;
+  background-color: var(--vp-nav-item-bg) !important;
+  color: var(--vp-nav-item-color) !important;
+  border-radius: var(--vp-nav-item-radius) !important;
+}
+
+/* ==========================================================================
+   首页首屏背景图（图片文件：docs/assets/img_background/首页.jpg）
+   --------------------------------------------------------------------------
+   位置：页面最上方（.VPHero 通过 margin-top:-nav-height 正好从 y=0 开始，
+        高度 100svh，默认主题在首页顶部会让导航栏保持透明，所以图会顶到顶栏后面）。
+   滚动：background-attachment: scroll —— 不是固定背景，会随页面上下移动。
+   过渡：**上方区域不叠"渐变遮罩"**（没有横跨全图的明暗渐变），
+        暗色主题额外加一层**均匀的整体 scrim**（--home-hero-scrim，只压暗、不塑形）；
+        最下方一小块固定做「模糊 + 淡化」过渡（见 ::before / ::after）。
+        三者是相互独立、叠加生效的层：整体 scrim（照片之上）→ 模糊层 → 淡化层。
+   ========================================================================== */
+
+/* 背景图路径：单独抽成变量，换图只改这里（相对本 CSS 文件定位） */
+:root {
+  --home-hero-image: url('../../assets/img_background/首页.jpg');
+
+  /* 整体遮罩（scrim）：铺在照片之上、两个伪元素之下的一层"雾"。
+     —— 它和底部过渡带（::before 模糊 / ::after 淡化）是**各自独立的两层**：
+        scrim 只管"整幅压暗"，底部过渡照旧负责"糊 + 淡到页面底色"，两者叠加、互不干扰。
+     —— 2026.9.21 起**两个主题都加**（亮色原先是 none，但照片本身偏暗，
+        深色字直接压上去完全读不清，三档对照后用户选定与暗色同款的黑纱+白字）。
+     —— 写法必须是「两点同色 linear-gradient」而不是纯色 —— background-image
+        只吃 <image>，纯色要用 background-color，而 background-color 没法参与多层叠加。
+        两层同色 = 全程均匀，不受渐变方向影响。
+     —— 强度调参：0.22 轻微 / 0.32 当前(亮) / 0.42 当前(暗，比亮色深一档以区分亮暗)。 */
+  --home-hero-scrim: linear-gradient(
+    rgba(0, 0, 0, 0.32),
+    rgba(0, 0, 0, 0.32)
+  );
+
+  /* 首屏文字的抗干扰柔光（亮暗统一：深色柔光，配浅色字）。
+     —— 注意不能加给 .name：它是渐变裁剪文字（-webkit-text-fill-color:
+        transparent），描影会从字形里透出来把标题糊成一团。 */
+  --home-hero-text-shadow: 0 0 6px rgba(0, 0, 0, 0.8),
+    0 0 16px rgba(0, 0, 0, 0.6), 0 1px 2px rgba(0, 0, 0, 0.7);
+
+  /* 首屏「黑幕淡出」时长：与文章区**取同一个值**（两边同一种形态：不透明纯黑 → 淡出到 0）。
+     —— 刻意不写成 `--home-hero-fade: var(--article-curtain-fade)`：两个变量分属两个 :root 块，
+        将来有人单独调文章区那一处时会**连坐**首页，而这俩其实没有任何耦合关系。
+        「口径一致」= 数值一致 + 都写成独立变量，改哪边都只动一个数字（当前都 1.1s）。
+     —— 改快慢只动这一个变量：只有 .VPHome::before 的黑幕声明用它。 */
+  --home-hero-fade: 1.1s;
+}
+/* 暗色模式：scrim 比亮色深一档，营造亮暗区别（文字柔光与亮色共用，无需分叉） */
+.dark {
+  --home-hero-scrim: linear-gradient(
+    rgba(0, 0, 0, 0.42),
+    rgba(0, 0, 0, 0.42)
+  );
+}
+
+/* 首屏文字配色：亮暗统一为浅色（照片偏暗 + 黑纱 scrim，深色字读不清）。
+   .text/.tagline 必须直接写 color（见下方历史坑①）；.name 保持品牌渐变色不动
+   （蓝色在压暗的照片上本身够读）。 */
+.VPHome .VPHero .text {
+  color: #f5f7fa;
+}
+.VPHome .VPHero .tagline {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* 历史坑（下次改这块先看）：
+   ① 默认主题的 .text 没有自己的 color 声明，颜色是从祖先【继承】下来的，
+      继承的是"已经算好的值"——只覆盖 --vp-c-text-1 不生效，必须直接写 color；
+   ② .name 取 --vp-home-hero-name-color（= --vp-c-brand-1）。 */
+
+/* 首屏「黑幕淡出」（2026.9.22 五轮重做，站长口径「要一开始全黑，之后慢慢显现」）
+   --------------------------------------------------------------------------
+   ⚠️⚠️ **四轮那版是错的，别再退回**：四轮只给 .VPHero 的两个伪元素加了
+      `opacity: 0 → 1` 的淡入，但**照片本体铺在 .VPHero 上、没有动画** → 首帧照片
+      就完整可见，观感是"底部一条模糊带浮上来"，根本不是"从全黑显现"。
+      根因：那两个伪元素**本来就只占屏幕一小块**（::before 有 mask，91% 以下才显影；
+      ::after 只 8% 高），拿它们当"整块首屏的淡入"是名不副实的。
+
+   ✅ 正确做法 = **一层盖在最上面、初始不透明纯黑、再淡出到 0 的"黑幕"**。
+      黑幕把首屏（照片 + 模糊带 + 底部淡化带 + 标题）**整块**遮住，
+      它淡出的过程 = 照片"慢慢显现"的过程。
+      这也顺带说明：四轮挂在 ::before / ::after 上的淡入**必须撤掉** ——
+      否则黑幕淡出(1.1s) 与伪元素淡入(1.1s) 同时发生 = 双重淡入，中段会发灰发闷。
+      现在两个伪元素回到"纯静态装饰层"的身份，只负责糊 + 淡，不参与时间轴。
+
+   动画名与文章区的 `article-curtain-out` **刻意分开** —— 六轮把文章区也换成黑幕之后，
+     两边的**方向已经一致**（都是"不透明纯黑 → 淡出到 0"，这正是站长要的"和首页相同的
+     黑色淡入"），但两个 @keyframes 与两个时长变量仍然各留一份：
+     名字分开才不会被"改一处连坐两处"的曲线反噬。
+
+   ⚠️ 用 animation 不用 transition（与文章区同因）：animation 在元素的**首次渲染**
+      那一帧也会跑，硬刷新 / 直链落在首页同样有黑幕；transition 首帧即终态 → 不触发。
+
+   ⚠️⚠️ **不重播**：首页首屏是"进得来就忘掉"的一次性场景（不存在"首页内部互跳"），
+      所以**不需要**文章区那套 `article-bg-keep` 跨页保持类。从首页 → 文章区 → 回首页时，
+      首页组件是**重新挂载**的 → 黑幕被新建 → 动画自然从头跑一次，正是想要的。
+
+   实测（headless Edge，1440，口径 = CDP 从"文档创建"起逐帧采 computed opacity）：
+     详见 .workbuddy/memory/2026-09-22.md 的「五轮」小节。
+   ⚠️ 量这套必须用 `Page.addScriptToEvaluateOnNewDocument` 从文档创建就注入采集器：
+     等页面加载完再注入时 1.1s 早就跑完了，只会看到一堆 op=0。 */
+@keyframes hero-curtain-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* 黑幕本体：挂在 .VPHome 的 ::before 上。
+   --------------------------------------------------------------------------
+   为什么是 .VPHome 而不是 .VPHero？—— .VPHero 的两个伪元素**都已被占用**
+     （::before = 模糊带，::after = 底部淡化带），没有第三个伪元素可用；
+     .container 里装着标题/头像，也不能拿来当幕布。
+     .VPHome 的伪元素是**空闲的**（侦察确认 content:none），正好。
+
+   ⚠️ .VPHome 默认是 `position: static` → 必须补 `position: relative`，
+      否则绝对定位的伪元素会以更外层元素为包含块，位置对不上首屏。
+   ⚠️ 尺寸写 `height: 100svh` 而**不能**用 `inset: 0` / `height: 100%` ——
+      .VPHome 是**整页高度**（实测 3787px，装着首屏 + 下方所有正文区块），
+      铺满它 = 黑幕盖到页面最底下，滚动时整页全黑。
+      首屏高度口径必须与 .VPHero 一致（同为 100svh），两者才是同一个矩形。
+      ⚠️ 这个 `100svh` 是**软耦合**：.VPHero 的高度定义在 docs/index.md 的行内 <style>
+        （`.VPHome .VPHero { min-height: 100vh; min-height: 100svh }`），是 `min-height`。
+        实测 1440x900 / 1440x500 / 1024x400 / 768x500 四档 heroH 恒等于 svh、差 0px；
+        但如果哪天往首屏里塞的内容高过一屏，hero 会被撑高、黑幕底部就会露出一条缝。
+        真出现那种情况，把这里的 `height` 改成 `min-height` 即可（黑幕跟着长）。
+   ⚠️ z-index: 2 → 压在 .VPHero 的所有内容之上（::before/::after 是 z-index:0，
+      .container 是 z-index:1）。站长要的是"全黑"，所以标题也必须一起被盖住。
+      三个 z-index 值（0 / 1 / 2）是配合关系，动任何一个都要一起看。 */
+.VPHome {
+  position: relative;   /* 黑幕伪元素的包含块（原本是 static） */
+}
+.VPHome::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100svh;       /* = .VPHero 的高度，见上面 ⚠️ */
+  z-index: 2;
+  pointer-events: none; /* 黑幕期间不该吃掉点击（虽然它很快就没了） */
+  background-color: #000;
+  animation: hero-curtain-out var(--home-hero-fade) ease both;
+  /* 系统「减少动态效果」开着时也要保住这次黑幕淡出：反压 base.css 的 0s / 1ms
+     （与文章区几处声明同一套口径；!important 必须写在简写之后才压得住） */
+  animation-duration: var(--home-hero-fade) !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+}
+
+/* 首屏本体：铺背景图（亮暗两模式都在原图上叠一层整体 scrim） */
+.VPHome .VPHero {
+  position: relative;   /* 下面两个伪元素绝对定位的包含块 */
+  overflow: hidden;     /* 兜住模糊层向外溢出的边缘，避免糊到下方正文上 */
+  background-color: var(--vp-c-bg);
+  /* 第一层（最上）= 整体 scrim，第二层 = 照片本身。
+     亮暗两模式照片都被整体压暗一层（见 :root 里 --home-hero-scrim 的说明）。
+     这一层只压暗照片，与下方「模糊 + 淡化」两个伪元素各管一段，互不覆盖。 */
+  background-image: var(--home-hero-scrim), var(--home-hero-image);
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  /* scroll = 随页面滚动（不是 fixed 固定背景），背景图会跟着首屏上下移动 */
+  background-attachment: scroll;
+}
+
+/* 让首屏内容（标题 / 头像）始终浮在模糊层之上：
+   .container 默认是 static，会被 position:absolute 的伪元素盖住 */
+.VPHome .VPHero .container {
+  position: relative;
+  z-index: 1;
+}
+
+/* 首屏文字的抗干扰描影（见上面 --home-hero-text-shadow 的说明）。
+   注意：不能加在 .name 上——.name 是「渐变裁剪文字」（-webkit-text-fill-color:
+   transparent），加了描影会让光晕从透明字形里透出来，把渐变标题变成一团糊白。 */
+.VPHome .VPHero .text,
+.VPHome .VPHero .tagline {
+  text-shadow: var(--home-hero-text-shadow);
+}
+
+/* --------------------------------------------------------------------------
+   底部过渡带（两层，都只占最下方一小块）
+   --------------------------------------------------------------------------
+   可调的三件事：
+     1) ::before 的 mask 起点  —— 模糊从这一行高度开始"显影"
+     2) ::after  的 height     —— 「页面底色」覆盖带的高度
+     3) 两条 mask 的 alpha 曲线 —— 过渡的"速率"（当前 = 先慢后快，见下方说明）
+   这三者要一起调，否则会出现"上面已经糊了、下面还没淡"或反过来的错位感。
+   当前：模糊起点 91%、覆盖带 8%、两条曲线都是缓入形状。
+   高度调参历史：70%/18% → 84%/12% → **91%/8%（当前）**（用户连续两轮说"太高了"）；
+   速率：早期是线性（匀速），用户反馈"看起来不舒服"，现已改成先慢后快。 */
+
+/* 模糊过渡（第一层）：把同一张图再铺一层、整体模糊，
+   再用 mask 让它在**最下方一小块**由透明渐渐显影 —— 视觉上就是"底部渐糊"。
+   mask 起点以上 alpha=0，完全不显示，所以照片绝大部份区域是干净的锐利原图。 */
+.VPHome .VPHero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  /* 和 .VPHero 用同一套两层背景（scrim + 照片）：
+     ::before 在底部过渡带里会以 alpha 0→1 显影，如果它只有"没压暗的照片"，
+     过渡带就会出现一条比周围更亮的带子（因为底层已经被 scrim 压暗了）。
+     两边同源 → 显影到哪里，色调都和周围完全一致。 */
+  background-image: var(--home-hero-scrim), var(--home-hero-image);
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  background-attachment: scroll;
+  filter: blur(18px);
+  /* 模糊的"显影速率"= 先慢后快（缓入曲线，约 t^2.2）：
+     刚进入过渡带时只糊一点点，越靠近底边糊得越快，和下面 ::after 的
+     白色淡出用同一条曲线形状，两层叠加时不会出现"一半在糊、一半没淡"。
+     不要改回"每档均匀加 0.3"的等距写法 —— 那是线性速率，用户反馈过不舒服。 */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 91%,
+    rgba(0, 0, 0, 0.05) 93%,
+    rgba(0, 0, 0, 0.18) 95%,
+    rgba(0, 0, 0, 0.42) 97%,
+    rgba(0, 0, 0, 0.75) 99%,
+    #000 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 91%,
+    rgba(0, 0, 0, 0.05) 93%,
+    rgba(0, 0, 0, 0.18) 95%,
+    rgba(0, 0, 0, 0.42) 97%,
+    rgba(0, 0, 0, 0.75) 99%,
+    #000 100%
+  );
+  /* ---- 本层**不参与**首屏淡入（2026.9.22 五轮撤掉）：
+     四轮曾在这里挂 `article-bg-in` 想"撑起整块淡入"，但本层是带 mask 的辅助层
+     （91% 以下才显影），首帧照片本体照旧可见 → 观感不是"从全黑显现"。
+     现在"从全黑显现"整体交给 .VPHome::before 的**黑幕**（见上方 hero-curtain-out），
+     本层回归纯静态装饰：只负责"底部渐糊"这一件事，不参与时间轴。
+     ⚠️ 别再加回来 —— 会和黑幕淡出叠成双重淡入（中段发灰发闷）。 */
+}
+
+/* 淡化过渡（第二层）：最底部叠一层「页面底色」，让它盖住照片、与下方正文无缝衔接。
+   --------------------------------------------------------------------------
+   ⚠️ 「出现速率」= 先慢后快（缓入曲线，约 t^2.2），这是用户明确要求的：
+      现在的曲线在过渡带上段几乎看不出变化（照片继续清晰可见），
+      越往下变化越快，到最底边迅速收成页面底色。
+      写法的关键：**不能用 `linear-gradient(transparent → var(--vp-c-bg))`** ——
+      两点渐变只能得到"匀速"（线性）速率，正是用户觉得不舒服的那版。
+      改成「纯色块 + mask」后 alpha 曲线可以任意塑形（下面 11 个采样点就是
+      t^2.2 每 10% 取一个值），既能任意调速率，又不用 color-mix 去给主题色加 alpha。
+   -------------------------------------------------------------------------- */
+.VPHome .VPHero::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 8%;
+  z-index: 0;
+  pointer-events: none;
+  background-color: var(--vp-c-bg);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.006) 10%,
+    rgba(0, 0, 0, 0.029) 20%,
+    rgba(0, 0, 0, 0.071) 30%,
+    rgba(0, 0, 0, 0.133) 40%,
+    rgba(0, 0, 0, 0.218) 50%,
+    rgba(0, 0, 0, 0.325) 60%,
+    rgba(0, 0, 0, 0.456) 70%,
+    rgba(0, 0, 0, 0.612) 80%,
+    rgba(0, 0, 0, 0.793) 90%,
+    #000 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.006) 10%,
+    rgba(0, 0, 0, 0.029) 20%,
+    rgba(0, 0, 0, 0.071) 30%,
+    rgba(0, 0, 0, 0.133) 40%,
+    rgba(0, 0, 0, 0.218) 50%,
+    rgba(0, 0, 0, 0.325) 60%,
+    rgba(0, 0, 0, 0.456) 70%,
+    rgba(0, 0, 0, 0.612) 80%,
+    rgba(0, 0, 0, 0.793) 90%,
+    #000 100%
+  );
+  /* ---- 本层同样**不参与**首屏淡入（2026.9.22 五轮撤掉，理由同 ::before）：
+     它是"最底部那条页面底色覆盖带"，四轮为了不让它冒出一条生硬白/黑边而挂了淡入；
+     现在整块首屏由黑幕统一遮住再撤走，白/黑边根本来不及被看见 → 本层无需动画。 */
+}
+
+/* ==========================================================================
+   文章区背景图（图片文件：docs/assets/img_background/文章页.jpg）
+   --------------------------------------------------------------------------
+   生效范围 = 站长说的「文章区」，由**纯 CSS 选择器**判定（不写 JS）：
+     · 文章正文页     —— `html:has(.VPSidebar)`
+       （有侧边栏 = 有「大容器」托底 = 读得安全；已核对 config.mjs 的 sidebar
+        覆盖了全部 9 个栏目，首页 / 友链 / 文章专区三页不在其中）
+     · 「文章专区」枢纽页 —— `html:has(.Layout.article-hub-bg)`
+       （打标方式：docs/文章专区.md 的 frontmatter `pageClass: article-hub-bg`，
+        VitePress 会把 pageClass 挂到 .Layout 上）
+     首页 / 友链 两个选择器都不命中 → 不铺背景，保持原样。
+   --------------------------------------------------------------------------
+   层级：**页面最底层**。做法是 body::before 用 position:fixed + z-index:-1，
+        压在全部内容之下（正文、大容器、侧边栏、顶栏都浮在它上面）。
+        ⚠️ 要让照片真能露出来，必须先解掉本来挡在它前面的两层底色：
+           ① 默认主题 base.css 给 body 写了 `background-color: var(--vp-c-bg)`
+              → 文章区里把 body 改成透明；
+           ② 但 html 没有底色时，body 的底色会被**传播到 canvas**（画在最底下，
+              照样盖住照片）→ 所以反过来把底色提到 html 上、body 让空。
+              两条缺一不可：只改 ① 照片被 canvas 挡住，只改 ② 照片被 body 挡住。
+   固定："固定背景"= 伪元素自身 position:fixed，随视口不动。
+        （不用 background-attachment:fixed —— 那个在移动端 Safari 上不生效。）
+   淡入（2026.9.22 **六轮重做**：由「照片自己淡入」改成「黑幕淡出」，
+        站长口径「文章专区的淡入效果更改为和首页 Home 相同的黑色淡入」）：
+        时间轴不再挂在照片（body::before）上，而是挂在**新增的黑幕**（body::after）上 ——
+        形态与首页 .VPHome::before 完全一致：初始不透明纯黑、再淡出到 0。
+        于是"进入文章区"= 先全黑、内容慢慢显现，与首页首屏观感统一。
+        启动时机仍是"选择器开始命中"那一下 —— animation 在元素的**首次渲染**也会跑，
+        所以硬刷新直接落在文章页同样有黑幕；SPA 从首页点进文章区也是从 opacity 1 跑到 0。
+        反向（离开文章区）选择器不再命中、动画被移除，黑幕立刻回到基础态 opacity:0
+        —— 本站只要"进入时黑幕淡出"，不做别的。
+        ⚠️ 照片层（body::before）**不再参与时间轴**：两层同时淡 = 双重淡入、中段发灰发闷
+          （首页 hero-curtain-out 那段注释记着同一个坑）。照片现在是"一直在那儿"，
+          随黑幕一起露出来。
+        ⚠️ 但**区内互跳**（枢纽页 ↔ 文章、文章 → 文章）不许重播：上面两个选择器跟着
+          页面内容走，换页空档里会双双不命中 → 必须由 html.article-bg-keep 把这段兜住。
+          要不要淡入**完全看"选择器什么时候开始命中"**：keep 类一旦挂上就一直挂着、
+          动画名从头到尾没变过 → 区内怎么跳都不重播；只有从首页 / 友链这类"没有背景的
+          页面"进来时选择器才开始命中 → 黑幕淡出一次。JS 只负责同步这个类，详见下面
+          「跨页保持」一节的注释。
+   --------------------------------------------------------------------------
+   ⚠️ 窄屏（<960px）只给**枢纽页**铺：doc-shell.css 的「大容器」只在 ≥960 生效，
+      窄屏文章页的正文是直接躺在页面底色上的 → 再垫一张照片就没法读了。
+      枢纽页不受影响：它的内容是一块块不透明卡片，照片只在卡片缝和标题周围露出。
+   ⚠️ 这些规则必须留在 style.css（跟着「首屏背景」一节），别挪进 doc-shell.css ——
+      那边整个文件包在 `@media (min-width: 960px)` 里，枢纽页会跟着一起失效。
+   ========================================================================== */
+
+:root {
+  /* 背景图路径（相对本 CSS 文件定位），换图只改这里 */
+  --article-bg-image: url('../../assets/img_background/文章页.jpg');
+
+  /* 整体遮罩（scrim）：2026.9.22 由「全屏均匀」改为**垂直渐变**。
+     —— 起因：站长反馈「亮色太白、暗色太黑」。均匀遮罩为了保标题可读性只能整幅压到
+        0.62 / 0.68，结果照片被冲成一片白雾 / 一片死黑（实测照片区亮度标准差：
+        亮 0.082、暗 0.008 —— 暗色那档几乎是纯色块，等于没铺图）。
+     —— 关键观察：整页里真正需要遮罩的只有**标题那一段**（y≈150~230，视口 19%~28%），
+        下方大片照片上没有任何文字（正文在「大容器」里、卡片是不透明的）。
+        所以按高度分档：顶部保留可读性所需的强度，往下逐级放开，照片在卡片缝和
+        下方重新显现。实测亮色照片区 sd 0.082 → 0.103、暗色 0.008 → 0.049，
+        而标题对比度**不降反升**（白纱变薄的那几档会掉到 4.4:1 以下，故不能再整幅降）。
+     ⚠️ 写法必须是 linear-gradient 而不是纯色 —— background-image 只吃 <image>，
+        纯色（background-color）没法参与多层叠加（同首屏 --home-hero-scrim 那个坑）。
+     ⚠️ 百分比是**按视口高度**算的（伪元素 fixed + inset:0），不是文档高度 ——
+        所以长文章与短页面表现一致，不会因为正文变长把照片重新压回白雾。
+      亮色 → 白纱：不加的话深色正文压在近黑的夜空上完全读不清（标题区要 0.6 以上）；
+      暗色 → 黑纱：不加的话浅色正文遇上亮着的星云 / 流星会花成一片（顶部反而要加到 0.72）。
+      ⚠️⚠️ 亮色档 2026.9.22 二次下压（站长反馈"还是太亮"）：.68/.60/.42/.26/.22
+         → **.66/.56/.34/.18/.06**。这次是**全档整体下压**（不再只放开下半部）：
+            · 顶部 .68→.66、第一档 .60→.56 —— 只降 0.02 / 0.04，是整条曲线里最保守的
+              两档，因为它们撑着标题与副标题；
+            · 中段 .42→.34 —— 照片在卡片缝里明显回来了；
+            · 底部 .26→.18、.22→.06 —— 几乎撤掉，照片下缘原样露出（那里一个字都没有）。
+         ⚠️ 试过更激进的 .62/.52（顶部降 0.06），实测**副标题掉到 4.37:1**（不过 AA），
+            退回 .66/.56 后 4.75:1 —— 顶部两档的可下调余量就这么点，别再往下压了。
+         ⚠️ 暗色档**一个像素都没动**（顶部黑纱要扛住亮星云，0.72 是必需的，见下）。
+      实测（1440，枢纽页，口径 = 文字墨迹范围内最坏像素）：
+        【旧亮档】标题 5.57:1 / 副标题 5.15:1；
+        【新亮档】标题 5.21:1 / 副标题 4.75:1（窄屏 874 视口：5.20 / 4.75）—— 均过 AA；
+        暗色（未动）标题 6.08:1 / 副标题 5.39:1。
+      照片可见度（同一张对照图，三块纯照片带取区域亮度标准差 sd，越大越"有画面"）：
+        上带 0.2399→0.2578、中带 0.2481→0.2708、下带 0.3158→0.3363（+4%~+7%）；
+        同时 mean 全线下降（0.644→0.622 / 0.749→0.732 / 0.475→0.444）= 白雾褪了。 */
+  --article-bg-scrim: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.66) 0%,
+    rgba(255, 255, 255, 0.56) 26%,
+    rgba(255, 255, 255, 0.34) 52%,
+    rgba(255, 255, 255, 0.18) 78%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+
+  /* —— 「文章专区」枢纽页专用遮罩（--article-hub-scrim，2026.9.23 十轮新增）——
+     站长口径：「文章专区亮色模式下有点太亮了，压暗一些（背景整体压暗）」。
+     为什么不能直接改上面那个 --article-bg-scrim：它是**文章正文页与枢纽页共用**的一层，
+       而正文页的文字压在「大容器」玻璃上、对照片明暗不敏感；动它会连坐 9 个栏目。
+       所以给枢纽页单开一个变量，只在 `html:has(.Layout.article-hub-bg)` 里换掉照片层的
+       那层遮罩（覆盖规则见下面「枢纽页：任何宽度都铺」一组里的 body::before）。
+     为什么方向从"白纱"反过来变成"黑纱"：
+       · 亮色档原来用白纱，是为了**深色标题**——照片顶部那块本身很暗（由上一轮实测的
+         4.75:1 反推，墨迹处原图亮度只有 ~0.28），不糊一层白就压不住深色字；
+       · 但白纱本身就是"整体提亮"，压到 0.66 时标题区已经是一片白雾，而且**再往下没有
+         余量**：上一轮实测顶部白纱降到 .62，副标题就掉到 4.37:1（不过 AA）。
+         —— 也就是说在"白纱 + 深色字"这条路上，「压暗」与「可读」是互相打架的；
+       · 换成"黑纱 + 浅色字"两个目标就不打架了：底色越暗、浅字越清楚，于是可以把照片
+         真正压下去，同时把照片原本的层次还给壁纸（这正是站长要"方便看壁纸"的前提）。
+     形态直接照抄**首页首屏**（那边亮暗两档都是黑纱 + 浅字，站长已选定过）→ 本站
+       "照片上的文字"从此统一成同一套，两个页面观感对齐。
+     ⚠️ 亮色档是**上深下浅**的渐变（与原来白纱"上浓下淡"同形）：标题那一段要最深，
+        越往下越放开，照片才会在卡片缝和页面下缘重新"回来"。
+        顶部两档（0% / 26%）撑的就是标题和副标题 —— **那两行正好落在这两档之间**
+        （900 高视口：标题 y=153~194、副标题 y=202~221，都在 0~234px 这一段里），
+        所以"顶部要不要再压"= "标题区够不够黑"，是一件事。
+     选档实测（1440x900 枢纽页；口径 = 文字墨迹框内**最亮背景像素** vs 浅字色，
+       底部三档固定 0.24/0.14/0.08，只换顶部两档）：
+         顶部 0.32/0.26 → 标题 2.47:1 / 副标题 2.23:1（≈ 首页首屏那一档的观感）
+         顶部 0.46/0.38 → 3.49 / 3.04（只过大字 AA）
+         顶部 0.60/0.52 → 5.38 / 4.55（第一次双双过 AA）
+         顶部 0.68/0.60 → 7.03 / 5.72
+       最终定在 **0.62/0.54**（在"刚过 AA"那档之上再留一点余量）。
+     ⚠️ 顶部压深**几乎不花"照片可见度"的预算**（这是选它而不是"再抬回去"的关键实测）：
+        顶部 0.46 → 0.68 之间，整页平均亮度只从 0.2397 掉到 0.2315（-3%），
+        而页面下缘那条纯照片带**一模一样**（mean 0.0569）—— 因为真正需要暗的只有标题两行，
+        大片照片都在 52% 以下那三档里。所以别再为了"省照片"把顶往回抬：不省，只丢可读性。
+     ⚠️ 也**别**把副标题改成纯白来换"顶部可以浅一点"：那会脱离首页 .tagline 的取值
+        （两边都是 rgba(255,255,255,.9)），两页摆一起会显出两种白。
+     ⚠️ 暗色档**原样沿用** --article-bg-scrim 的暗档数值（站长对暗色没提意见，
+        且那一档要扛住亮着的星云 / 流星）—— 所以下面 .dark 里那两份值必须**逐字相同**。
+        代价：亮色档顶部 0.62 与暗色档顶部 0.72 只差一档，两档的区别主要落在
+        底部三档（亮 0.24/0.14/0.08 vs 暗 0.38/0.22/0.18）。
+     ⚠️ 调"压暗到什么程度"只动这一处（亮暗各一份，改完两边都要看一眼）。
+        首页首屏那一档是 0.32 均匀、实测 2.22 / 2.32 —— 那是站长**看过三档后选定**的观感，
+        本页照抄的是"黑纱 + 浅字"这个**形态**，不照抄那个数字（本页顶着一行 15.2px 小字，
+        按下调会把副标题压到 AA 以下）。 */
+  --article-hub-scrim: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.62) 0%,
+    rgba(0, 0, 0, 0.54) 26%,
+    rgba(0, 0, 0, 0.24) 52%,
+    rgba(0, 0, 0, 0.14) 78%,
+    rgba(0, 0, 0, 0.08) 100%
+  );
+
+  /* —— 通透度（modulate，2026.9.22 八轮新增）——
+     站长口径：「把容器都做一些 modulate，让背景可以显现出来」。
+     玩法：把文章区里几层"表面"的底色从**不透明**换成**半透明**，照片就从它们后面透出来。
+     四个数 = 各层**自身的遮盖强度**（0 = 全透，1 = 全实），调观感只动这一块。
+     ⚠️ 这几层是**叠着**的（卡片 / 条目条 → 侧边栏面板 → 大容器），实际遮住多少是
+        1-(1-a)(1-b)…；所以面板那档要给得比容器**低**，叠完才不会又变回一块实底。
+     ⚠️ 亮 / 暗各写一份（项目铁律：.dark 只放颜色）—— 亮档白纱、暗档黑纱，
+        RGB 分别抄各自主题的 --vp-c-bg-soft（246,246,247 / 32,33,39）
+        与 --vp-c-bg（255,255,255 / 27,27,31）。
+     ⚠️ 必须与下面 --article-glass-blur **成套**用：只降遮盖强度、不给模糊，照片的高频
+        细节会和正文笔画抢对比度（正文读不动）。反过来只给模糊不降遮盖强度 = 白改。
+     ⚠️ 改完要在亮 / 暗两档各看一眼**页面底部**的正文对比度 —— 那里 scrim 只剩 0.06 / 0.18，
+        照片最亮、容器又最薄，是整页最险的位置（顶部有 scrim 扛着，反而最安全）。 */
+  /* ⚠️ 九轮（站长：「透明度再稍微透明一些」）：四层各 -0.06（相对约 -9%），
+     仍是"一档"的量级 —— 再降就会撞上面那条注释里的对比度下限，别一次降两档。
+     四层一起降是刻意的：只降其中一两层会打乱"面板必须比容器薄"的叠序。 */
+  --article-glass-shell: rgba(246, 246, 247, 0.6); /* 大容器底（原文 --vp-c-bg-soft） */
+  --article-glass-panel: rgba(255, 255, 255, 0.36); /* 侧边栏面板（原文 --vp-c-bg） */
+  --article-glass-card: rgba(246, 246, 247, 0.54); /* 枢纽页栏目卡片（原文 --vp-c-bg-soft） */
+  --article-glass-chip: rgba(246, 246, 247, 0.34); /* 侧边栏分类条目条（原文 --vp-c-bg-soft） */
+  --article-glass-blur: 12px; /* 背后模糊半径：给"毛玻璃"质感，越大约糊 */
+
+  /* 黑幕时长：2026.9.22 六轮把「照片自己淡入」换成「黑幕淡出」后沿用同一个数
+     （二轮由 0.55s 加到 1.1s，站长口径「淡入的时间增加」）。
+     与首页 --home-hero-fade 同值（站长口径「和首页一致」），但**仍是独立变量**
+     —— 理由同 --home-hero-fade 那段注释：不连坐，将来单调一边不会带偏另一边。
+     改快慢只动这一个变量 —— 三处黑幕声明（文章正文页 / 枢纽页 / 跨页保持）都用它。 */
+  --article-curtain-fade: 1.1s;
+}
+.dark {
+  --article-bg-scrim: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.72) 0%,
+    rgba(0, 0, 0, 0.62) 26%,
+    rgba(0, 0, 0, 0.38) 52%,
+    rgba(0, 0, 0, 0.22) 78%,
+    rgba(0, 0, 0, 0.18) 100%
+  );
+  /* 通透度·暗色档（只换颜色，数值与亮档一致 —— 见 :root 那一大段说明）。
+     遮罩强度必须和亮档**一样**：暗色下若放松，亮着的星云 / 流星会从半透明容器里
+     直接糊到正文上（正文是浅色，比亮色档更怕"底下突然变亮"）。
+     ⚠️ 九轮起补一条：改通透度必须**亮暗两档同改**（数值逐字一致），否则换主题时
+        两档算出来的遮盖强度不同 → 切主题会闪一下。 */
+  --article-glass-shell: rgba(32, 33, 39, 0.6);
+  --article-glass-panel: rgba(27, 27, 31, 0.36);
+  --article-glass-card: rgba(32, 33, 39, 0.54);
+  --article-glass-chip: rgba(32, 33, 39, 0.34);
+
+  /* 枢纽页遮罩·暗色档：**与上面 --article-bg-scrim 的暗档逐字相同**（原因见 :root 里
+     --article-hub-scrim 那段：站长只提了亮色太亮，暗色档不动）。
+     两份值分开写是为了"亮暗各自成对"，改的时候必须同改。 */
+  --article-hub-scrim: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.72) 0%,
+    rgba(0, 0, 0, 0.62) 26%,
+    rgba(0, 0, 0, 0.38) 52%,
+    rgba(0, 0, 0, 0.22) 78%,
+    rgba(0, 0, 0, 0.18) 100%
+  );
+}
+
+/* 背景层本体：**永远存在**（只是 opacity:0），这样选择器一命中就有"起始态"。
+   ⚠️ 六轮起它**不再自己淡入**：
+      时间轴全部交给下面那层黑幕。两层同时淡 = 双重淡入、中段发灰发闷
+      （首页 hero-curtain-out 那段注释记着同一个坑，别退回）。 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--article-bg-scrim), var(--article-bg-image);
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* 黑幕本体：形态与首页 .VPHome::before 一致（不透明纯黑 → 淡出到 0），挂 body::after。
+   --------------------------------------------------------------------------
+   为什么是 body::after：文章区**没有**一个统一的祖先容器可用 —— 文章正文页的根是
+     `.VPContent.has-sidebar`、枢纽页打标在 `.Layout.article-hub-bg` 上，两条路径唯一的
+     公共父亲就是 body；而 body::before 已经被上面那张照片占掉了 → 只剩 ::after。
+   ⚠️ position: fixed + inset:0（首页那边是 absolute + height:100svh）—— 文章页没有
+      "首屏"这个矩形概念，fixed 天然就是"当前视口全黑"，页面滚在哪都不露缝；
+      也顺手绕开了首页那条 100svh 软耦合（hero 被内容撑高就露缝）。
+      已核对：body 上没有 transform / filter / perspective → fixed 的包含块就是视口。
+   ⚠️ z-index: 999 —— 必须压过文章区里所有固定层：顶栏 `--vp-z-index-nav` = 30、
+      侧边栏 `--vp-z-index-sidebar` = 60。999 与 `.VPSkipLink` 同值，但 DOM 顺序在其后
+      （body 的最后一个子盒）→ 依然在上面。搜索框那套（1000 / 1001）**故意**留在黑幕
+      之上：黑幕只活 1.1s，没必要去盖一个用户主动打开的弹窗。
+   ⚠️ 基础态写 `opacity: 0` 而**不是** 1 —— 动画被移除的那一刻（离开文章区）属性要立刻
+      回到"看不见"。若这里写 1，每次点「返回上一级」都会先闪一帧全黑。
+      起始的"全黑"由 @keyframes 的 from 提供（`animation … both` 会接管这段）。
+   ⚠️ 这个元素**全站都存在**（只是透明）—— 首页/友链上它安静躺着，不影响任何东西。 */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  background-color: #000;
+  opacity: 0;
+}
+
+/* 与首页的 hero-curtain-out 曲线一样（1 → 0），仍刻意分成两个 keyframes：
+   两边将来要单独调快慢 / 缓动时不会互相连坐（同 --home-hero-fade 那段的理由）。 */
+@keyframes article-curtain-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* —— 文章正文页：≥960 才铺（窄屏没有大容器托底，见文件头说明） —— */
+@media (min-width: 960px) {
+  html:has(.VPSidebar) {
+    background-color: var(--vp-c-bg);
+  }
+  html:has(.VPSidebar) body {
+    background-color: transparent;
+  }
+  html:has(.VPSidebar) body::before {
+    opacity: 1;
+  }
+  html:has(.VPSidebar) body::after {
+    animation: article-curtain-out var(--article-curtain-fade) ease both;
+    /* 系统「减少动态效果」开着时也要保住这次黑幕淡出（反压 base.css 的 0s / 1ms） */
+    animation-duration: var(--article-curtain-fade) !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* —— 「文章专区」枢纽页：任何宽度都铺 —— */
+html:has(.Layout.article-hub-bg) {
+  background-color: var(--vp-c-bg);
+}
+html:has(.Layout.article-hub-bg) body {
+  background-color: transparent;
+}
+html:has(.Layout.article-hub-bg) body::before {
+  opacity: 1;
+  /* 照片层换用**枢纽页专用遮罩**（黑纱，见 :root 里 --article-hub-scrim 的说明）：
+     正文页继续用 --article-bg-scrim（白纱），两页从此各用各的，互不连坐。
+     ⚠️ 这条只写在这里就够了 —— 下面「跨页保持」那一组（html.article-bg-keep）只声明
+        opacity、不碰 background-image，两边同时命中时以本条为准（特异性更高：
+        :has() 里的 class 计一层，且元素数更多）→ 区内互跳的换页空档里也一直是黑纱。 */
+  background-image: var(--article-hub-scrim), var(--article-bg-image);
+}
+html:has(.Layout.article-hub-bg) body::after {
+  animation: article-curtain-out var(--article-curtain-fade) ease both;
+  animation-duration: var(--article-curtain-fade) !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+}
+
+/* —— 跨页保持：给 SPA 换页的"中间空档"兜底（类由 theme/index.js 挂到 <html> 上） ——
+   --------------------------------------------------------------------------
+   起因（2026.9.22 二轮，站长反馈「点文章之后背景图还会重新加载一遍」）：
+     上面两个 `:has()` 选择器**跟着页面内容走** —— 而 SPA 换页中间有 2~4 帧
+     「旧页已卸载、新页还没挂上」的空档（实测：点击卡片后 t+124ms 两个选择器都不命中
+     → 声明被撤、动画被移除；t+203ms 新页挂上、动画重新跑 —— 于是整块背景"闪掉又淡
+     回来"，区内的每一次互跳都要重看一遍淡入）。
+   做法：把**同一套声明**（照片可见 + 黑幕动画）再挂一份到 html 的类 `article-bg-keep` 上。
+     类不随内容重渲染变化 → 整段换页里这两件事都一直成立 →
+     区内互跳（点文章、点侧边栏、回枢纽页）背景连续、**黑幕一次也不重播**。
+     ⚠️ 这个类**只负责"兜住空档"**，不负责"重播"：类本来就在时 classList.add 是空操作，
+        动画名从头到尾没变过 → 浏览器认定为同一个动画。要不要淡入完全交给上面两个
+        `:has()` 选择器（它们什么时候开始命中，就什么时候淡入一次）。
+   ⚠️ 这个类只在"背景本该铺"的时候才由 JS 挂上（判定口径与上面两个选择器 + 960 断点
+      逐条对齐）。若在首页/友链误挂，整页会浮出文章区那张照片、黑幕还要再闪一下。
+   ⚠️⚠️ 上面两处 `:has()` 规则与本节共**三份**声明必须**逐字一致** —— 只要算出来的
+      值不同，就等于"动画名没变但值变了"，浏览器会把它当成一次重启（又白闪一下）。
+   ⚠️ 本节（以及另两处）**绝不能**补一句 `opacity: 1`：黑幕的可见性完全由 @keyframes
+      的 from + `both` 填充决定；静态写 1 会让"动画被移除"那一瞬间把幕布重新推开
+      （理由见 body::after 那段的 ⚠️）。照片层 body::before 的 `opacity: 1` 才是必须写的。 */
+html.article-bg-keep {
+  background-color: var(--vp-c-bg);
+}
+html.article-bg-keep body {
+  background-color: transparent;
+}
+html.article-bg-keep body::before {
+  opacity: 1;
+}
+html.article-bg-keep body::after {
+  animation: article-curtain-out var(--article-curtain-fade) ease both;
+  animation-duration: var(--article-curtain-fade) !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+}
+
+/* 枢纽页的标题 / 副标题配色：浅色 + 柔光描影
+   --------------------------------------------------------------------------
+   2026.9.23 十轮：照片层换成黑纱（--article-hub-scrim）之后，这两个字必须从深色翻成浅色
+   —— 否则深字压暗底直接读不清。
+   取值**照抄首页首屏**（.text 用 #f5f7fa、.tagline 用 rgba(255,255,255,.9)，描影共用
+   --home-hero-text-shadow）：两页现在是同一种"黑纱 + 浅字"形态，取一套值才不会两页两种白。
+   ⚠️ 必须用 html:has(.Layout.article-hub-bg) 收窄：.home-section__title 与 .home-section__sub
+      首页也在用，不收窄会把首页的标题一起翻成浅色（那边标题在白底上，翻过去就没了）。
+   ⚠️ 描影挂在文字元素自身即可：首页那侧不能给 .name 挂（渐变裁剪文字会被糊成一团），
+      本页没有 .name，两个标题元素都安全。
+   ⚠️⚠️ 别以为"反正是浅字、背景越暗越清楚"就万事大吉 —— 这条路上同样有下限：
+      照片里有局部高光（星空 / 星云那几处），它能斜着穿过字形把浅字"吃掉"。
+      实测（同一口径，只换 --article-hub-scrim 的顶部两档）：
+        顶部 0.32/0.26 → 标题 2.47:1 / 副标题 2.23:1；0.46/0.38 → 3.49 / 3.04；
+        0.60/0.52 → 5.38 / 4.55（**第一次双双过 AA**）；0.68/0.60 → 7.03 / 5.72。
+      最终随 --article-hub-scrim 一起定在 0.62/0.54。所以这两个颜色**不许**单独改亮改暗：
+      它们与那三档遮罩是**一套**（改颜色 = 改对比度）。
+      注：口径取"墨迹框内最亮背景像素"，比真实观感保守（描影还会再抬一点可读性）。 */
+html:has(.Layout.article-hub-bg) .home-section__title {
+  color: #f5f7fa;
+  text-shadow: var(--home-hero-text-shadow);
+}
+html:has(.Layout.article-hub-bg) .home-section__sub {
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: var(--home-hero-text-shadow);
+}
+
+/* ==========================================================================
+   首页顶栏：首屏背景图还在后面时，保持透明
+   --------------------------------------------------------------------------
+   默认主题只在「首页 + 尚在页面顶部（scrollY===0）」时让顶栏透明
+   （.VPNavBar.home.top）；滚一下就摘掉 top 类，于是下面几条规则把顶栏刷上底色：
+     .VPNavBar:not(.has-sidebar):not(.home.top)            → 顶栏底色
+     .VPNavBar:not(.has-sidebar):not(.home.top) .content-body → 内容行底色
+     .divider / .divider-line                               → 1px 分隔线
+   结果就是「刚往下滚一点点，照片上方就冒出白条/黑条」。这里把这段区间
+   （0 → 首屏底边滚过顶栏）内的顶栏全部压成透明。
+
+   滚过首屏之后交还给默认主题 —— 白色正文区如果还顶着透明顶栏，
+   正文会和「Eddieの小窝 / Home」叠在一起（实测确实糊成一团），
+   所以这里不做「永远透明」。想强行永远透明：删掉 :not(.home-past-hero) 即可。
+
+   body.home-past-hero 由 theme/index.js 的滚动监听维护。
+   只在 ≥960px 生效：默认主题的顶栏只有在这个断点才 position:fixed
+   （<960px 是普通文档流，不会盖住内容；.screen-open 态也还要靠它自己的底色）。 */
+@media (min-width: 960px) {
+  body:not(.home-past-hero) .VPNavBar.home,
+  body:not(.home-past-hero) .VPNavBar.home .content-body,
+  body:not(.home-past-hero) .VPNavBar.home .divider,
+  body:not(.home-past-hero) .VPNavBar.home .divider-line {
+    background-color: transparent !important;
+  }
+}
+
+/* 顶栏透明期间的文字配色：
+   顶栏透明 = 站名/菜单直接压在首屏照片上（照片偏暗 + 黑纱），深色字读不清。
+   暗色主题默认就是浅色文字，不用动；亮色主题在透明窗口内把站名改成
+   与暗色一致的浅色，滚过首屏（body.home-past-hero，顶栏恢复底色）后自动还原。
+   覆盖窗口与上面的透明背景规则严格一致（同 :not(.home-past-hero) + ≥960px），
+   不透明状态完全不受影响。
+
+   历史坑（下次改这块先看）：
+   ① .title 的颜色在默认主题里是继承来的（同首屏 .text），只覆盖
+      --vp-c-text-1 没用，要直接写 color；
+   ② 首页的 Home 菜单项处于 .active 态，吃的是 --vp-c-brand-1（蓝色，照片上够读，
+      不随透明窗口变色）；
+   ③ 移动端菜单展开态（.screen-open）顶栏有自己的底色，别去动它。 */
+@media (min-width: 960px) {
+  html:not(.dark) body:not(.home-past-hero) .VPNavBar.home .title {
+    color: #f5f7fa;
+  }
+}

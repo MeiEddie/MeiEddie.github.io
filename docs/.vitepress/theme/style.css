@@ -414,9 +414,15 @@
         实测 1440x900 / 1440x500 / 1024x400 / 768x500 四档 heroH 恒等于 svh、差 0px；
         但如果哪天往首屏里塞的内容高过一屏，hero 会被撑高、黑幕底部就会露出一条缝。
         真出现那种情况，把这里的 `height` 改成 `min-height` 即可（黑幕跟着长）。
-   ⚠️ z-index: 2 → 压在 .VPHero 的所有内容之上（::before/::after 是 z-index:0，
-      .container 是 z-index:1）。站长要的是"全黑"，所以标题也必须一起被盖住。
-      三个 z-index 值（0 / 1 / 2）是配合关系，动任何一个都要一起看。 */
+   ⚠️ z-index: 1 → 黑幕只压在**背景照片**之上、内容之下。
+      —— 2026.9.23 改（站长口径「过渡只有背景过渡，文字 / 按钮等内容直接显示」）：
+         原 z-index:2 把标题也一并盖住（整屏全黑、文字跟着一起淡入）；降到 1 后，
+         黑幕落在 `.VPHero` 背景（layer 6，照片本体）之上、`.container`（z-index:1，layer 7）
+         之下 —— 同档 z-index 靠**文档顺序** tie-break（::before 先画、内容后画）→ 内容
+         始终浮在黑幕之上。于是过渡期间只有背景从黑渐显，标题 / 按钮直接可见。
+      —— 三个 z-index 值（0=模糊 / 淡化层，1=内容，1=黑幕）的配合关系：模糊 / 淡化层在
+         `.VPHero` 子树里（layer 6），黑幕（layer 7）盖住它们、但被内容（layer 7 靠后）压在下面。
+         动任何一个都要一起看。 */
 .VPHome {
   position: relative;   /* 黑幕伪元素的包含块（原本是 static） */
 }
@@ -427,7 +433,7 @@
   left: 0;
   right: 0;
   height: 100svh;       /* = .VPHero 的高度，见上面 ⚠️ */
-  z-index: 2;
+  z-index: 1;
   pointer-events: none; /* 黑幕期间不该吃掉点击（虽然它很快就没了） */
   background-color: #000;
   animation: hero-curtain-out var(--home-hero-fade) ease both;
@@ -813,10 +819,12 @@ body::before {
       "首屏"这个矩形概念，fixed 天然就是"当前视口全黑"，页面滚在哪都不露缝；
       也顺手绕开了首页那条 100svh 软耦合（hero 被内容撑高就露缝）。
       已核对：body 上没有 transform / filter / perspective → fixed 的包含块就是视口。
-   ⚠️ z-index: 999 —— 必须压过文章区里所有固定层：顶栏 `--vp-z-index-nav` = 30、
-      侧边栏 `--vp-z-index-sidebar` = 60。999 与 `.VPSkipLink` 同值，但 DOM 顺序在其后
-      （body 的最后一个子盒）→ 依然在上面。搜索框那套（1000 / 1001）**故意**留在黑幕
-      之上：黑幕只活 1.1s，没必要去盖一个用户主动打开的弹窗。
+   ⚠️ z-index: -1 —— 2026.9.23 改（站长口径「过渡只有背景过渡，文字 / 按钮等内容直接显示」）：
+      原 z-index:999 把整页（含文字 / 按钮）一起盖黑、随黑幕一起淡入；现在把黑幕沉到
+      内容之下、照片之上 —— 与照片层 `body::before` 同为 z-index:-1，但 ::after 在文档顺序
+      上后画 → 黑幕压在照片上面、又落在所有内容（正文 / 侧边栏 / 顶栏 / 卡片 / 隐藏按钮，
+      它们都在 layer ≥0）下面。于是过渡期间只有背景从黑渐显，文字 / 按钮直接可见。
+      搜索框那套（1000 / 1001）本就在黑幕之上，无影响。
    ⚠️ 基础态写 `opacity: 0` 而**不是** 1 —— 动画被移除的那一刻（离开文章区）属性要立刻
       回到"看不见"。若这里写 1，每次点「返回上一级」都会先闪一帧全黑。
       起始的"全黑"由 @keyframes 的 from 提供（`animation … both` 会接管这段）。
@@ -825,7 +833,7 @@ body::after {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: 999;
+  z-index: -1;
   pointer-events: none;
   background-color: #000;
   opacity: 0;

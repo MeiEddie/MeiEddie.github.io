@@ -7,9 +7,18 @@ docs/.vitepress/cache/
 # Vite 加载 config 时的中间产物（config.mjs.timestamp-*.mjs）
 docs/.vitepress/config.mjs.timestamp-*.mjs
 
-# WorkBuddy 工作数据：tmp 里是探针脚本 / 临时产物（动辄几百 MB），不入库；
-# memory 里的项目记忆**保留入库**（跨设备要能用，别连它一起忽略）
-.workbuddy/tmp/
+# WorkBuddy 工作数据：**只有 memory/ 里的项目记忆入库**（跨设备要能用）。
+# 其余一律不入库 —— tmp/ 的探针脚本与临时产物（动辄几百 MB）、
+# 以及清理时在 .workbuddy/ 根下生成的体检输出（_audit-*.txt 之类）。
+# ⚠️ 用「白名单」写法 `.workbuddy/*` + `!.workbuddy/memory/`，
+#    别再退回只忽略 `.workbuddy/tmp/` —— 那样根下新生成的 txt 会漏网上传。
+.workbuddy/*
+!.workbuddy/memory/
+
+# 图片瘦身（2026.9.24 webp 化）的原始图片备份：26 个 .png/.jpg，约 20MB。
+# 站上用的是 docs/assets/** 里转好的 .webp，这份只是本地留档 —— 别推上仓库。
+# ⚠️ 位置就留在项目根；别挪进 docs/，那边是 VitePress 的构建扫描范围。
+.img_origin/
 
 .DS_Store
 Thumbs.db

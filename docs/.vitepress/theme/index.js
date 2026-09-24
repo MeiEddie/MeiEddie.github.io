@@ -508,7 +508,7 @@ export default {
       }
 
       // 当前页用哪张背景图（决定"互跳时背景换没换"）：
-      //   article-hub / 文章正文页(.VPSidebar) 共用 文章页.jpg → 'article'
+      //   article-hub / 文章正文页(.VPSidebar) 共用 文章页.webp → 'article'
       //   friend-hub → 'friend'、playground-hub → 'playground'；无背景页 → ''
       const bgImageKey = () => {
         if (document.querySelector('.Layout.article-hub-bg')) return 'article'
@@ -521,9 +521,9 @@ export default {
 
       // 预加载各枢纽页 / 文章区背景图：保证切换时图已在缓存里、瞬间切换不闪白。
       // （CSS 背景图首次用到才会解码；这里提前 new Image() 触发下载 + 解码。）
-      ;['/assets/img_background/首页.jpg', '/assets/img_background/文章页.jpg',
-        '/assets/img_background/友链页.jpg', '/assets/img_background/游乐场页.jpg',
-        '/assets/img_background/艺术走廊.jpg'].forEach((u) => { const im = new Image(); im.src = u })
+      ;['/assets/img_background/首页.webp', '/assets/img_background/文章页.webp',
+        '/assets/img_background/友链页.webp', '/assets/img_background/游乐场页.webp',
+        '/assets/img_background/艺术走廊.webp'].forEach((u) => { const im = new Image(); im.src = u })
 
       // 上一次**已揭示**的背景 key（'' = 还没记录过 / 或上一页无背景）。
       // ⚠️⚠️ 判定口径（2026.9.24 二十五轮修订，站长报「除了首页之外的页面背景没有淡入效果」）：
@@ -851,9 +851,9 @@ export default {
           title: 'Por Una Cabeza',
           artists: ['Thomas Newma'],
           src: '/assets/music/PorUnaCabeza-ThomasNewma.mp3',
-          cover: '/assets/img_music/PorUnaCabeza-ThomasNewma.jpg'
+          cover: '/assets/img_music/PorUnaCabeza-ThomasNewma.webp'
         },
-        // { title: '曲名', artists: ['作者'], src: '/assets/music/曲名.mp3', cover: '/assets/img_music/封面.jpg' },
+        // { title: '曲名', artists: ['作者'], src: '/assets/music/曲名.mp3', cover: '/assets/img_music/封面.webp' },
       ]
       // 打开弹窗时是否自动播第一首（默认关：进来先挑歌，别一开门就响）
       const AUTOPLAY_ON_OPEN = false

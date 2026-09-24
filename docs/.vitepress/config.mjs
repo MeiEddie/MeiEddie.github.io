@@ -21,7 +21,7 @@ export default defineConfig({
       // 栏目导航枢纽页（docs/文章专区.md），首页不再展示栏目卡片。
       { text: '文章专区', link: '/文章专区' },
       // 艺术走廊：画作 / 照片展示页（docs/艺术走廊.md，layout: page + 枢纽页背景）。
-      // 滚轮横向浏览的画廊页，背景用 docs/assets/img_background/艺术走廊.jpg。
+      // 滚轮横向浏览的画廊页，背景用 docs/assets/img_background/艺术走廊.webp。
       { text: '艺术走廊', link: '/艺术走廊' },
       // 游乐场：汇集「个人游戏通道」与「梗图」的玩法入口页（docs/游乐场.md，layout: page + 枢纽页背景）。
       // 2026.9.23：与「友链」互换位置 → 现在紧跟在「文章专区」右侧。

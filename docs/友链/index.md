@@ -16,7 +16,7 @@
 # 本页**没有**在 config.mjs 的 sidebar 里配 key → 和「文章专区」一样不显示侧边栏。
 layout: page
 title: 友链
-# 背景：docs/assets/img_background/友链.jpg（与「文章专区」同形式：照片层 + 黑纱 + 黑幕淡入 + 浅色标题）。
+# 背景：docs/assets/img_background/友链页.webp（与「文章专区」同形式：照片层 + 黑纱 + 黑幕淡入 + 浅色标题）。
 # 背景规则见 theme/style.css「文章区背景图」一节里新增的「友链」枢纽页一组。
 pageClass: friend-hub-bg
 ---

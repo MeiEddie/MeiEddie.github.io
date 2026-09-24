@@ -295,7 +295,7 @@
 }
 
 /* ==========================================================================
-   首页首屏背景图（图片文件：docs/assets/img_background/首页.jpg）
+   首页首屏背景图（图片文件：docs/assets/img_background/首页.webp）
    --------------------------------------------------------------------------
    位置：页面最上方（.VPHero 通过 margin-top:-nav-height 正好从 y=0 开始，
         高度 100svh，默认主题在首页顶部会让导航栏保持透明，所以图会顶到顶栏后面）。
@@ -308,7 +308,7 @@
 
 /* 背景图路径：单独抽成变量，换图只改这里（相对本 CSS 文件定位） */
 :root {
-  --home-hero-image: url('../../assets/img_background/首页.jpg');
+  --home-hero-image: url('../../assets/img_background/首页.webp');
 
   /* 整体遮罩（scrim）：铺在照片之上、两个伪元素之下的一层"雾"。
      —— 它和底部过渡带（::before 模糊 / ::after 淡化）是**各自独立的两层**：
@@ -590,7 +590,7 @@
 }
 
 /* ==========================================================================
-   文章区背景图（图片文件：docs/assets/img_background/文章页.jpg）
+   文章区背景图（图片文件：docs/assets/img_background/文章页.webp）
    --------------------------------------------------------------------------
    生效范围 = 站长说的「文章区」，由**纯 CSS 选择器**判定（不写 JS）：
      · 文章正文页     —— `html:has(.VPSidebar)`
@@ -601,10 +601,10 @@
         VitePress 会把 pageClass 挂到 .Layout 上）
      · 「友链」枢纽页   —— `html:has(.Layout.friend-hub-bg)`
        （打标方式：docs/友链/index.md 的 frontmatter `pageClass: friend-hub-bg`，
-        与文章专区同款黑纱 + 浅色标题，图换成 友链页.jpg；任何宽度都铺）
+        与文章专区同款黑纱 + 浅色标题，图换成 友链页.webp；任何宽度都铺）
      · 「游乐场」枢纽页 —— `html:has(.Layout.playground-hub-bg)`
        （打标方式：docs/游乐场.md 的 frontmatter `pageClass: playground-hub-bg`，
-        与友链同款均匀黑纱 + 浅色标题，图换成 游乐场页.jpg；任何宽度都铺）
+        与友链同款均匀黑纱 + 浅色标题，图换成 游乐场页.webp；任何宽度都铺）
      首页 不命中 → 不铺背景，保持原样。
    --------------------------------------------------------------------------
    层级：**页面最底层**。做法是 body::before 用 position:fixed + z-index:-1，
@@ -645,15 +645,15 @@
 
 :root {
   /* 背景图路径（相对本 CSS 文件定位），换图只改这里 */
-  --article-bg-image: url('../../assets/img_background/文章页.jpg');
-  /* 友链页背景图（docs/assets/img_background/友链页.jpg）。友链页用 friend-hub-bg 单独挂，
-     与文章页.jpg 互不连坐 —— 改图只动这一处。遮罩用本页专用 --friend-hub-scrim（整幅均匀黑纱，
+  --article-bg-image: url('../../assets/img_background/文章页.webp');
+  /* 友链页背景图（docs/assets/img_background/友链页.webp）。友链页用 friend-hub-bg 单独挂，
+     与文章页.webp 互不连坐 —— 改图只动这一处。遮罩用本页专用 --friend-hub-scrim（整幅均匀黑纱，
      见该变量说明；与文章专区 --article-hub-scrim 互不连坐）。 */
-  --friend-bg-image: url('../../assets/img_background/友链页.jpg');
-  /* 游乐场页背景图（docs/assets/img_background/游乐场页.jpg）。游乐场页用 playground-hub-bg 单独挂，
-     与文章页.jpg 互不连坐 —— 改图只动这一处。遮罩用本页专用 --playground-hub-scrim（整幅均匀黑纱，
+  --friend-bg-image: url('../../assets/img_background/友链页.webp');
+  /* 游乐场页背景图（docs/assets/img_background/游乐场页.webp）。游乐场页用 playground-hub-bg 单独挂，
+     与文章页.webp 互不连坐 —— 改图只动这一处。遮罩用本页专用 --playground-hub-scrim（整幅均匀黑纱，
      同款「黑幕淡入 + 浅色标题」，与友链 / 文章专区同形）。 */
-  --playground-bg-image: url('../../assets/img_background/游乐场页.jpg');
+  --playground-bg-image: url('../../assets/img_background/游乐场页.webp');
 
   /* 整体遮罩（scrim）：2026.9.22 由「全屏均匀」改为**垂直渐变**。
      —— 起因：站长反馈「亮色太白、暗色太黑」。均匀遮罩为了保标题可读性只能整幅压到
@@ -750,7 +750,7 @@
      站长口径：「友链背景的上方有些暗，不要做局部亮暗分类」—— 即不再沿用文章专区那种
      「上深下浅」的垂直渐变（顶部 0.62 压暗标题、底部 0.08 放开照片），改成**整幅均匀**
      的同一档黑纱（两点同色的 linear-gradient = 全程均匀，不受方向影响）。
-     原因：友链页.jpg 作为壁纸，用户希望整张均匀可见、不要顶部被单独压暗。
+     原因：友链页.webp 作为壁纸，用户希望整张均匀可见、不要顶部被单独压暗。
      取值：亮色 0.38 / 暗色 0.42 —— 比文章专区渐变顶部 0.62/0.72 明显更浅
      （顶部不再发暗），又比文章专区底部 0.08 深（照片仍清晰可辨、不会糊成一团）。
      ⚠️ 这是**独立变量**：文章专区仍是渐变 --article-hub-scrim，两页各用各的、互不连坐
@@ -770,9 +770,9 @@
   );
 
   /* —— 「艺术走廊」枢纽页（2026.9.23 新增）——
-     背景图：docs/assets/img_background/艺术走廊.jpg；遮罩与友链 / 游乐场同形同值
+     背景图：docs/assets/img_background/艺术走廊.webp；遮罩与友链 / 游乐场同形同值
      （整幅均匀黑纱，亮 0.38 / 暗 0.42），改本页遮罩只动这一处，不连坐其他页。 */
-  --art-hall-bg-image: url('../../assets/img_background/艺术走廊.jpg');
+  --art-hall-bg-image: url('../../assets/img_background/艺术走廊.webp');
   --art-hall-hub-scrim: linear-gradient(
     rgba(0, 0, 0, 0.38),
     rgba(0, 0, 0, 0.38)
@@ -956,7 +956,7 @@ html:has(.Layout.article-hub-bg) body::after {
 
 /* —— 「友链」枢纽页：任何宽度都铺（与「文章专区」同款「黑幕淡入」形态，但遮罩换成本页
    专用的均匀黑纱 --friend-hub-scrim，不再用文章专区的垂直渐变）——
-   友链页.jpg 来自 docs/assets/img_background/友链页.jpg；遮罩用本页专用 --friend-hub-scrim
+   友链页.webp 来自 docs/assets/img_background/友链页.webp；遮罩用本页专用 --friend-hub-scrim
    （整幅均匀黑纱，见 :root 里该变量的说明 —— 改友链遮罩只动那一处，不连坐文章专区）。
    照片层 / 黑幕 / 标题色 照搬上面「文章专区」枢纽页一组，只把图换成 --friend-bg-image、
    把遮罩换成 --friend-hub-scrim。 */
@@ -981,7 +981,7 @@ html:has(.Layout.friend-hub-bg) body::after {
 
 /* —— 「游乐场」枢纽页：任何宽度都铺（与「友链」/「文章专区」同款「黑幕淡入」形态，
    遮罩换成本页专用的均匀黑纱 --playground-hub-scrim）——
-   游乐场页.jpg 来自 docs/assets/img_background/游乐场页.jpg；遮罩用本页专用 --playground-hub-scrim
+   游乐场页.webp 来自 docs/assets/img_background/游乐场页.webp；遮罩用本页专用 --playground-hub-scrim
    （整幅均匀黑纱，见 :root 里该变量的说明 —— 改游乐场遮罩只动那一处，不连坐其他页）。
    照片层 / 黑幕 / 标题色 照搬上面「友链」枢纽页一组，只把图换成 --playground-bg-image、
    把遮罩换成 --playground-hub-scrim。 */
@@ -1006,7 +1006,7 @@ html:has(.Layout.playground-hub-bg) body::after {
 
 /* —— 「艺术走廊」枢纽页：任何宽度都铺（与「友链」/「游乐场」同款「黑幕淡入」形态，
    遮罩换成本页专用的均匀黑纱 --art-hall-hub-scrim）——
-   艺术走廊.jpg 来自 docs/assets/img_background/艺术走廊.jpg；遮罩用本页专用
+   艺术走廊.webp 来自 docs/assets/img_background/艺术走廊.webp；遮罩用本页专用
    --art-hall-hub-scrim（整幅均匀黑纱，改它只动 :root 里的那一份，不连坐其他页）。
    照片层 / 黑幕 / 标题色 照搬上面「游乐场」枢纽页一组，只把图换成 --art-hall-bg-image、
    把遮罩换成 --art-hall-hub-scrim。 */

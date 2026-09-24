@@ -235,7 +235,7 @@ html.hub-hidden:has(.Layout.friend-hub-bg) .home-section > *:not(.hub-hide-btn) 
   text-align: center;
 }
 /* 图片占位提示：把 <img> 放进 .game-thumb 即自动替换。
-   ⚠️ 首页正文里的 <img src="/assets/img_game/x.png"> 会被 Vite 打包成
+   ⚠️ 首页正文里的 <img src="/assets/img_game/x.webp"> 会被 Vite 打包成
    /assets/x.<hash>.png（实测：transformAssetUrls 对根路径也生效，构建后 dist 里
    只有哈希名、没有原名目录）—— 所以别指望靠 CI 的 `cp -r docs/assets/.` 兜底，
    也别为了"路径对不对"去改写法，构建产物里看 src 才是准的。 */
@@ -675,7 +675,7 @@ html.hub-hidden:has(.Layout.friend-hub-bg) .home-section > *:not(.hub-hide-btn) 
 }
 
 /* ===== 「本站建设」页 联系方式·微信二维码 =====
-   结构：.contact-qr > img（图片在 docs/assets/img_info/wechat.jpg，`.md` 里写**绝对路径** /assets/…）。
+   结构：.contact-qr > img（图片在 docs/assets/img_info/wechat.webp，`.md` 里写**绝对路径** /assets/…）。
    ⚠️ 文档页正文被 .vp-doc 包着 → `.vp-doc img` 自带 max-width:100% 但**没有高度约束**，
    实测二维码原图 133KB / 分辨率偏大，会整幅铺满 752px 正文宽、显得很突兀 →
    这里显式收成 220px 的小方块，并给白底圆角（二维码本身白底，压深色卡片上更好看）。 */

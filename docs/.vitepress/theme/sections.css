@@ -1,7 +1,8 @@
 /* ==========================================================================
    通用「区块 + 卡片网格」样式表
    --------------------------------------------------------------------------
-   谁在用：docs/index.md      → 首页的个人游戏通道（分「网页游戏 / 微信小游戏」两组）/ 动态
+   谁在用：docs/index.md      → 首页的「动态」区块（个人游戏通道已于 2026.9.23 迁到 docs/游乐场.md）
+           docs/游乐场.md      → 个人游戏通道（分「网页游戏 / 微信小游戏」两组）+ 梗图入口（2026.9.23 新增）
            docs/文章专区.md    → 栏目导航卡片（原首页「功能区」，2026.9.21 迁出）
            docs/友链/index.md  → 友链列表（2026.9.21 新增，竖向头像卡）
    为什么要单独一个文件：这些规则原先都写在 docs/index.md 的内联 <style> 里，
@@ -11,7 +12,7 @@
    ⚠️ 维护须知：
      1) 新增 / 删除 / 改名一个栏目 —— 只改 docs/文章专区.md 里的
         <a class="article-card" href="...">栏目名</a>，本文件不用动。
-     2) 下面的类名只被上述两个页面使用，其它文章页不受影响。
+     2) 下面的类名只被上述四个页面使用，其它文章页不受影响。
      3) 这两个页面分别是 layout: home / page，内容**不经过 .vp-doc**，
         所以选择器不用刻意加特异性。如果哪天把「文章专区」改成普通文档页
         （layout: doc），内容会被 .vp-doc 包住，它自带的
@@ -91,11 +92,15 @@
         （.copy-btn / .back-btn），只是底色换成枢纽页卡片同款 --article-glass-card，
         这样它和卡片摆在同一张照片上观感是一族的；hover 变蓝用 --back-btn-hover
         （那是"浅底胶囊"专用的对比度正确档，亮暗各一份，见本文件「顶栏返回按钮」一节）。
-     ② 按钮定位 —— .home-section 的绝对定位右上角。⚠️ position:relative **只给本页补**：
-        .home-section 是首页 / 文章专区 / 友链 三页共用的类，加在别处会把那两页也变成
-        包含块（首页那侧有绝对定位的伪元素，会被带偏）。
-     ③ 隐藏态（html.hub-hidden）—— 把本页正文（标题 + 副标题 + 卡片网格）整体淡出。
-        标记在 docs/文章专区.md，类的挂载 / 复位在 theme/index.js 的全局委托里。
+     ② 按钮定位 —— position:fixed，**视口右上、顶栏正下方**；不再跟着 .home-section 滚动
+        （取消"跟随页面移动"），并落在内容大容器（.home-section 居中列）之外的右侧留白区。
+        2026.9.23 十七轮从「.home-section 绝对定位、标题右侧」改成现在的固定定位。
+        ⚠️ 因此 .home-section 上的 position:relative 现在对按钮已无意义，但保留着无害
+        （首页那侧有绝对定位伪元素，仍需要它做包含块，不能删）。
+     ③ 隐藏态（html.hub-hidden）—— 把本页正文（.home-section 内除按钮外的全部子节点：
+        标题 / 副标题 / 卡片网格 / 游戏分组 / 友链列表等）整体淡出。
+        标记在 docs/文章专区.md、docs/游乐场.md、docs/友链/index.md，类的挂载 / 复位在
+        theme/index.js 的全局委托里。
    ⚠️ 隐藏用 opacity + pointer-events，**不用 display:none / visibility** ——
       保留占位：淡入淡出才有过渡，且页面高度不跳（否则点一下整页抖一下）。
    ⚠️⚠️ 隐藏规则必须带 `:has(.Layout.article-hub-bg)` 收窄：.home-section__title /
@@ -103,16 +108,35 @@
       会把首页的同名元素一起藏掉（那页没有 .Layout.article-hub-bg 兜着）。
    ⚠️ 按钮自己**不藏**（它是唯一的"还原"入口），顶栏也不藏（那不属于"本页内"的东西，
       留着还能从这里点去别的页）。 */
-html:has(.Layout.article-hub-bg) .home-section { position: relative; }
+/* 三页枢纽页（文章专区 / 游乐场 / 友链）都把首个 .home-section 设为定位祖先，
+   让里面的 .hub-hide-btn 有绝对定位的参照物（按钮写在每页首个 <section> 里）。
+   ⚠️ 用「三页各一份」而不是 .home-section 全局：.home-section 是首页 / 三枢纽页共用的类，
+       全局加 position:relative 会把首页那侧也带成包含块（首页有绝对定位伪元素，会被带偏）。 */
+html:has(.Layout.article-hub-bg) .home-section,
+html:has(.Layout.playground-hub-bg) .home-section,
+html:has(.Layout.friend-hub-bg) .home-section { position: relative; }
+/* 游乐场枢纽页：首个 .home-section 的上下留白对齐另外两个枢纽页（4.5rem）—— 游戏区迁到本页后，
+   原本给首页中部区块用的 .home-games.home-section{2rem} 不再适用本页，否则游戏区标题会比
+   文章专区 / 友链的标题更靠上（2026.9.23 十七轮）。这条 :has 收窄到本页，不影响首页备用规则；
+   窄屏 3rem 见底部 @media(max-width:560px)。 */
+html:has(.Layout.playground-hub-bg) .home-section {
+  padding-top: 4.5rem;
+  padding-bottom: 4.5rem;
+}
 .hub-hide-btn {
-  position: absolute;
-  top: 1.5rem;
-  right: 1.25rem;
-  z-index: 3; /* 压在卡片网格之上（网格是后来的兄弟节点，不给层级会被盖住） */
+  position: fixed; /* 十七轮：固定定位 —— 不随页面滚动（取消"跟随页面移动"），并移到视口右侧、
+                      内容大容器（.home-section 居中列，max-width 1120px）之外的右侧留白区 */
+  /* 固定在顶栏正下方、靠右。top 用 --vp-nav-height(80px) 起算，保证压不到顶栏；
+     ⚠️ 改顶栏高度时这里要跟着变。之前 4.6rem 是跟着 .home-section 上内距走的（与标题同高），
+     现在固定定位下那条推导已作废，按钮不再按各页标题位置算 top。 */
+  top: calc(var(--vp-nav-height) + 0.8rem);
+  right: 1.5rem;
+  z-index: 40; /* 压在页面内容之上（固定定位，与 .home-section 不再有包含关系） */
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.8rem;
+  gap: 0.45rem;
+  /* 十四轮放大：原 0.35rem 0.8rem / 0.85rem → 现在这一档，整体大约大 30% */
+  padding: 0.55rem 1.1rem;
   border: 1px solid var(--vp-c-divider);
   border-radius: 999px;
   background: var(--article-glass-card);
@@ -120,7 +144,7 @@ html:has(.Layout.article-hub-bg) .home-section { position: relative; }
   backdrop-filter: blur(var(--article-glass-blur));
   color: var(--vp-c-text-1);
   font-family: inherit;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 600;
   line-height: 1.4;
   cursor: pointer;
@@ -140,25 +164,32 @@ html:has(.Layout.article-hub-bg) .home-section { position: relative; }
 /* 图标：两枚内联 SVG（睁眼 / 闭眼），同一时刻只显示一枚 —— 用 CSS 切，省一次 JS 改结构的麻烦。
    语义（"隐藏"还是"显示"）由按钮上的 aria-label + 文字一起担着，图标只是辅助。 */
 .hub-hide-btn__icon {
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
   flex: 0 0 auto;
 }
 .hub-hide-btn__icon--eye-off { display: none; }
 html.hub-hidden .hub-hide-btn__icon--eye { display: none; }
 html.hub-hidden .hub-hide-btn__icon--eye-off { display: block; }
 
-/* —— 隐藏态：正文整体淡出（保留占位，见上面 ⚠️） —— */
-html:has(.Layout.article-hub-bg) .home-section__title,
-html:has(.Layout.article-hub-bg) .home-section__sub,
-html:has(.Layout.article-hub-bg) .card-grid {
+/* 十七轮：隐藏按钮已改为 position:fixed（统一在视口右上、顶栏下方），不再按页面单独算 top，
+   所以原来给游乐场补的 top:2rem 已删除（固定定位下它会把按钮压进顶栏，且现与标题不再绑定）。 */
+
+/* —— 隐藏态：把 .home-section 内「除按钮外」的所有子节点整体淡出（保留占位，整页高度不抖；
+       选择器带 :has(.Layout.*-hub-bg) 收窄，只命中三个枢纽页，不会碰首页 / 文章页）。
+       用 .home-section > *:not(.hub-hide-btn) 而不是点名 title/sub/card-grid —— 这样
+       游乐场的 .game-group（含分组标题 + 游戏网格）、友链的 .friend-list / .apply-friend 等
+       异形结构不用逐个加选择器，一套规则覆盖全部枢纽页内容。 —— 2026.9.23 十五轮泛化 */
+html:has(.Layout.article-hub-bg) .home-section > *:not(.hub-hide-btn),
+html:has(.Layout.playground-hub-bg) .home-section > *:not(.hub-hide-btn),
+html:has(.Layout.friend-hub-bg) .home-section > *:not(.hub-hide-btn) {
   transition: opacity 0.45s ease;
-  /* 同上：减少动态效果下也保住这次淡出（否则"啪"一下消失，没有"藏起来"的观感） */
+  /* 减少动态效果下也保住这次淡出（否则"啪"一下消失，没有"藏起来"的观感） */
   transition-duration: 0.45s !important;
 }
-html.hub-hidden:has(.Layout.article-hub-bg) .home-section__title,
-html.hub-hidden:has(.Layout.article-hub-bg) .home-section__sub,
-html.hub-hidden:has(.Layout.article-hub-bg) .card-grid {
+html.hub-hidden:has(.Layout.article-hub-bg) .home-section > *:not(.hub-hide-btn),
+html.hub-hidden:has(.Layout.playground-hub-bg) .home-section > *:not(.hub-hide-btn),
+html.hub-hidden:has(.Layout.friend-hub-bg) .home-section > *:not(.hub-hide-btn) {
   opacity: 0;
   pointer-events: none;
 }
@@ -401,10 +432,13 @@ html.hub-hidden:has(.Layout.article-hub-bg) .card-grid {
 }
 
 /* ===== 首页区块的竖直留白（2026.9.21 二次调整：当前顺序为
-   简介(.home-profile) → 作者帐号(.home-accounts) → 动态(.home-status) → 游戏区(.home-games)
-   → 免责声明(.home-disclaimer)，压缩各区块之间的空档） =====
-   为什么不直接改 .home-section：它被首页 / 文章专区 / 友链三个页面共用，
-   动它会把另外两页一起改掉，所以只针对首页那两个区块（.home-games / .home-status）。
+   简介(.home-profile) → 作者帐号(.home-accounts) → 动态(.home-status) → 免责声明(.home-disclaimer)，
+   压缩各区块之间的空档）
+   ⚠️ 2026.9.23：游戏区(.home-games) 已整段迁到「游乐场」页 → 下面带 `.home-games` 的几条
+      对首页已失效，**保留备用**：游乐场那边用的是同一套类，将来若把游戏区搬回首页，
+      这份「补 .vp-doc 双份留白」的补偿立刻需要，别删。 =====
+   为什么不直接改 .home-section：它被首页 / 文章专区 / 友链 / 游乐场四个页面共用，
+   动它会把另外几页一起改掉，所以只针对特定区块（.home-games / .home-status）。
    ⚠️ 首页正文被 VPHomeContent 包在 .vp-doc 里，`.vp-doc h2`=(0,1,1) 给区块标题
       叠了 margin:48px 0 16px + padding-top:24px + border-top（那条横分隔线就是这么来的）。
       单层 class 的 .home-section__title=(0,1,0) 压不住它 → 视觉上变成
@@ -443,7 +477,10 @@ html.hub-hidden:has(.Layout.article-hub-bg) .card-grid {
 /* ===== 游戏分组（个人游戏通道 → 网页游戏 / 微信小游戏） =====
    结构：.home-games > .game-group > (.game-group__title + .card-grid)
    组标题左对齐 + 品牌色竖条，和上方居中的区块标题拉开层级。
-   ➜ 增删分组只改 docs/index.md；分组标题文字在 <h3 class="game-group__title"> 里。 */
+   ➜ 增删分组只改 docs/游乐场.md（2026.9.23 从首页迁来）；分组标题文字在
+     <h3 class="game-group__title"> 里。
+   ⚠️ 那页背景是黑纱照片 → 分组标题在 style.css「枢纽页的标题 / 副标题配色」一节被
+     覆写成白色（#fff + 柔光描影）。改这里的基础色**不会**改变它在游乐场的实际显示。 */
 .home-games .game-group + .game-group { margin-top: 2.25rem; }
 .home-games .game-group__title {
   display: flex;
@@ -762,6 +799,494 @@ html.hub-hidden:has(.Layout.article-hub-bg) .card-grid {
   }
 }
 
+/* ===== 艺术走廊画廊（docs/艺术走廊.md，layout: page，2026.9.23 新增） =====
+   结构：.gallery-viewport（横向滚动视口）> .gallery-track（一排卡牌）> .gallery-card*N。
+   交互（滚轮转横向 / 停止吸附最近卡牌 / 选中放大 / 点击居中）在 theme/index.js 的
+   「艺术走廊画廊」一节；这里只管样子。
+   视觉：卡牌 = 「玻璃相框」——底色用枢纽页卡片同款半透明 --article-glass-card +
+   毛玻璃（与 .article-card / .hub-hide-btn 一族），照片从相框后透出来；
+   选中的卡牌放大回原尺寸 + 品牌色描边 + 投影，未选中的缩小压暗 —— 即参考图的
+   「中间大、两边小」的卡牌选择效果；卡牌之间用 gap 留出空隙。
+   ⚠️ 卡牌尺寸收在 .gallery-viewport 的三个变量里，想整体调大小只改这三个数。 */
+.gallery-viewport {
+  --gallery-card-w: 300px;
+  --gallery-card-h: 420px;
+  --gallery-gap: 28px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain; /* 滚到头不把滚动链给页面（页面就一条画廊，几乎不用竖滚） */
+  padding: 2rem 0 2.4rem;         /* 给选中放大 / 投影留出上下空间，避免被 overflow 裁掉 */
+  scrollbar-width: none;          /* 隐藏滚动条：横向移动全交给滚轮 / 拖动 */
+}
+.gallery-viewport::-webkit-scrollbar { display: none; }
+.gallery-viewport:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: 4px; }
+/* 首尾两张也能滚到正中：轨道左右各垫「半屏 - 半卡」的空档
+   （50vw 是视口一半；视口本身通栏无内边距，正好以屏幕中线为基准）。 */
+.gallery-track {
+  display: flex;
+  align-items: center;
+  gap: var(--gallery-gap);
+  width: max-content;
+  padding-left: calc(50vw - var(--gallery-card-w) / 2);
+  padding-right: calc(50vw - var(--gallery-card-w) / 2);
+}
+.gallery-card {
+  flex: 0 0 auto;
+  margin: 0;
+  width: var(--gallery-card-w);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 14px;
+  padding: 10px 10px 12px;
+  background: var(--article-glass-card);
+  -webkit-backdrop-filter: blur(var(--article-glass-blur));
+  backdrop-filter: blur(var(--article-glass-blur));
+  cursor: pointer;
+  /* 未选中态：缩小 + 压暗（选中后由 .is-active 放大回来 —— 初始的"中间大"观感）。
+     transform 只做视觉缩放，不影响布局 → 吸附坐标按未缩放的 offsetLeft 算即可。
+     will-change 把缩放/透明度提升到合成层，滚动途中焦点切换不吃主线程（防卡顿）。 */
+  transform: scale(0.88);
+  opacity: 0.62;
+  will-change: transform, opacity;
+  transition: transform 0.28s ease, opacity 0.28s ease,
+    border-color 0.28s ease, box-shadow 0.28s ease;
+  /* 系统「减少动态效果」开着时也要保住这段过渡（反压 base.css 的 0s，全站同一口径） */
+  transition-duration: 0.28s !important;
+  -webkit-tap-highlight-color: transparent;
+}
+.gallery-card.is-active {
+  transform: scale(1);
+  opacity: 1;
+  border-color: var(--vp-c-brand-1);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.28);
+}
+.gallery-card__frame {
+  width: 100%;
+  height: calc(var(--gallery-card-h) - 44px); /* 减去相框上下内边距 + 作品名一行的估算高度 */
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--vp-c-bg-soft);
+}
+.gallery-card__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* 占位资产比例不一，统一裁满相框；换正式资产后若要整幅可见改 contain */
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.gallery-card__name {
+  margin-top: 0.5rem;
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--vp-c-text-1);
+  /* 长名字省略号截断，别把相框撑变形 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 窄屏：卡牌收窄一档，手机上一屏仍能看到"中间大两边小"的层次 */
+@media (max-width: 560px) {
+  .gallery-viewport {
+    --gallery-card-w: 230px;
+    --gallery-card-h: 340px;
+    --gallery-gap: 18px;
+  }
+}
+
+/* ===== 艺术走廊 · 作品弹窗（2026.9.24 新增） =====
+   点击卡牌弹出：左半侧画作原比例展示，右半侧介绍（内容源 = 艺术走廊.md 里
+   每张卡牌的 .gallery-card__intro 隐藏块）；右上角 × 关闭，点遮罩 / Esc 也能关。
+   DOM 由 theme/index.js 的「艺术走廊 · 作品弹窗」动态创建挂到 body
+   （换页无残留，路由变化时强制关）；这里只管样子。
+   ⚠️ 弹窗要长时间读字 → 面板用 --vp-c-bg 实底，不走枢纽页那套半透明玻璃。
+   ⚠️ 浮层 z-index 1000，押在文章区黑幕（z-index:999）之上。 */
+.art-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.24s ease, visibility 0.24s ease;
+  transition-duration: 0.24s !important; /* 反压系统"减少动态效果"的 0s（全站同一口径） */
+}
+.art-modal.is-open { visibility: visible; opacity: 1; }
+.art-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 12, 16, 0.62);
+}
+.art-modal__panel {
+  position: relative;
+  z-index: 1;
+  width: min(880px, 100%);
+  max-height: 82vh;
+  display: grid;
+  grid-template-columns: minmax(0, 46%) minmax(0, 1fr);
+  background: var(--vp-c-bg);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+.art-modal__media {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--vp-c-bg-soft);
+}
+.art-modal__img {
+  display: block;
+  max-width: 100%;
+  max-height: 82vh;
+  object-fit: contain; /* 弹窗里看原比例整幅，不裁切（区别于卡牌的 cover） */
+  user-select: none;
+}
+.art-modal__body {
+  min-width: 0;
+  overflow-y: auto;
+  padding: 1.8rem 1.9rem 1.6rem;
+}
+.art-modal__title {
+  margin: 0 0 0.4rem;
+  font-size: 1.18rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--vp-c-text-1);
+}
+.art-modal__meta {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: var(--vp-c-text-2);
+}
+.art-modal__intro p {
+  margin: 0 0 0.9em;
+  font-size: 0.9rem;
+  line-height: 1.85;
+  color: var(--vp-c-text-1);
+}
+.art-modal__intro p:last-child { margin-bottom: 0; }
+.art-modal__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 50%;
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+  transition-duration: 0.2s !important;
+}
+.art-modal__close:hover {
+  border-color: var(--vp-c-brand-1);
+  color: var(--vp-c-brand-1);
+}
+.art-modal__close:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: 2px; }
+/* 弹窗开着时锁住页面竖滚（画廊滚轮是 passive:false 局部拦的，页面本身照常滚）
+   ⚠️ 两个弹窗共用一条锁滚规则：作品弹窗 html.art-modal-open / 音乐弹窗 html.music-modal-open */
+html.art-modal-open,
+html.music-modal-open { overflow: hidden; }
+/* 内容源兜底：md 里已带 hidden 属性，这里再补一道显式 display:none */
+.gallery-card__intro { display: none; }
+/* 窄屏：左右分栏改上下堆叠 —— 图占上半（原比例），文字下半可滚 */
+@media (max-width: 720px) {
+  .art-modal { padding: 1rem; }
+  .art-modal__panel {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+    max-height: 88vh;
+  }
+  .art-modal__media { min-height: 0; max-height: 44vh; }
+  .art-modal__img { max-height: 44vh; }
+  .art-modal__body { padding: 1.2rem 1.2rem 1.1rem; }
+}
+
+/* ===== 顶栏「音乐」按钮 + 音乐弹窗（2026.9.24 二十三轮新增） =====
+   按钮由 Layout.vue 的两个插槽渲染（#nav-bar-content-after = 桌面顶栏「友链」右侧；
+   #nav-screen-content-after = 移动端抽屉菜单底部），行为在 theme/index.js 的
+   「音乐弹窗」委托里；这里只管样子。
+   ⚠️ 按钮造型**复用顶栏第 6 节那套 --vp-nav-item-* 变量**（宽高 / 圆角 / 间距 / 底色 /
+      字色），于是它和 Home、文章专区、亮暗开关是同一形制的一格，不用另调数值。
+   ⚠️ 音乐**不在 config.mjs 的 nav 里**（nav 项必须是链接，点了会跳路由 → 就是死链），
+      它是真按钮 → 没有 /音乐 这个路由，也不会 404。
+   弹窗（二十四轮改版，对齐站长截图）：一张**下拉卡片** —— 不再屏幕居中，
+   面板钉在导航栏正下方、横向锚在「音乐」按钮下面（left 由 index.js 开窗时写入）；
+   卡片内容 = 居中标题 + 圆形封面 + 艺术家名单 + 进度条 + 播放控制/音量。 */
+.music-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: var(--vp-nav-item-w);
+  height: var(--vp-nav-item-h);
+  margin-left: var(--vp-nav-item-gap);
+  padding: 0;
+  border: 0;
+  background-color: var(--vp-nav-item-bg);
+  color: var(--vp-nav-item-color);
+  border-radius: var(--vp-nav-item-radius);
+  font-family: inherit;
+  font-size: 19px;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  transition-duration: 0.2s !important; /* 反压系统「减少动态效果」的 0s（全站同一口径） */
+}
+.music-nav-btn:hover { color: var(--vp-nav-item-active); }
+.music-nav-btn:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: 2px; }
+/* 「音乐」这一格要**紧跟在导航最后一项（友链）右边** —— 可插槽 #nav-bar-content-after
+   位于整条内容区的末尾（亮暗开关、汉堡按钮都排在它前面），直接渲染出来会孤零零地
+   吊在最右端、与友链隔着一个开关（实测相隔 120px）。
+   → 用 flex order 把它提回菜单之后：自己 order:0，把亮暗开关 / extra 推到 order:1、
+     汉堡推到 order:2，视觉顺序即「…友链 | 音乐 | 亮暗开关 | 汉堡」。
+   ⚠️ 别改成往 .VPNavBarMenu 里塞 DOM：那是 Vue 渲染的子节点，换页 patch 时会被摘掉，
+      而且 .VPNavBarMenu 在 <960px 整组 display:none，塞进去移动端就没了。 */
+.music-nav-btn { order: 0; }
+.VPNavBar .VPNavBarAppearance { order: 1; }
+.VPNavBar .VPNavBarExtra { order: 1; }
+.VPNavBar .hamburger { order: 2; }
+/* <960px：顶栏菜单整组隐藏（收进汉堡菜单），这一格跟着藏 ——
+   移动端走抽屉里那一份（Layout.vue 的 #nav-screen-content-after）。 */
+@media (max-width: 959px) {
+  .VPNavBar .music-nav-btn { display: none; }
+}
+.music-nav-btn__icon {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+}
+/* 正在播放：按钮文字变品牌色 + 图标轻微呼吸（关掉弹窗音乐仍在放，这里就是指示灯） */
+.music-nav-btn.is-playing { color: var(--vp-nav-item-active); }
+.music-nav-btn.is-playing .music-nav-btn__icon {
+  animation: music-pulse 1.6s ease-in-out infinite;
+  animation-duration: 1.6s !important;
+}
+@keyframes music-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.42; }
+}
+/* 移动端抽屉里那一份：整行宽、与上面的菜单项拉开一点距离 */
+.VPNavScreen .music-nav-btn {
+  width: 100%;
+  margin: 14px 0 0;
+  font-size: 17px;
+}
+
+/* 弹窗容器只当「全屏遮罩」用：面板绝对定位在其上（top = 顶栏下沿 + 10px） */
+.music-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.24s ease, visibility 0.24s ease;
+  transition-duration: 0.24s !important;
+}
+.music-modal.is-open { visibility: visible; opacity: 1; }
+.music-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 12, 16, 0.32); /* 下拉卡片不必压太黑，能看清「点外面就关」即可 */
+}
+.music-modal__panel {
+  position: absolute;
+  top: calc(var(--vp-nav-height) + 10px);
+  /* left 由 index.js 按音乐按钮位置写入；按钮不在（<960px）时 JS 写 left:50% + 居中 transform */
+  width: 360px;
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
+  padding: 1.6rem 1.5rem 1.5rem;
+  background: var(--vp-c-bg);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 20px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+}
+.music-modal__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--vp-c-text-2);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  transition-duration: 0.2s !important;
+}
+.music-modal__close:hover { color: var(--vp-c-brand-1); }
+.music-modal__close:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: 2px; }
+.music-modal__title {
+  margin: 0 2rem;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--vp-c-text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.music-modal__empty {
+  margin: 1.1rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.85;
+  color: var(--vp-c-text-2);
+}
+.music-modal__empty code {
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: var(--vp-c-bg-soft);
+  font-size: 0.85em;
+}
+/* 封面 + 艺术家：左边圆形封面（object-fit:cover 圆形裁选 —— 站长口径：
+   「不拉伸，在能展示的最大程度上节选图片」= 短边撑满、长边居中裁掉），
+   右边一行一条的艺术家名单 */
+.music-player__meta {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  margin-top: 1.3rem;
+}
+.music-player__cover {
+  flex: 0 0 auto;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--vp-c-bg-soft);
+}
+.music-player__cover[hidden] { display: none; }
+.music-player__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* 圆形裁选：绝不拉伸/留白 */
+  user-select: none;
+}
+.music-player__artists {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--vp-c-text-1);
+}
+.music-player__artist {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 进度条：时间挂在两端、中间可点跳转；末端一枚圆形滑钮（对齐截图） */
+.music-player__progress {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 1.5rem;
+}
+.music-player__cur,
+.music-player__total {
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
+}
+.music-player__bar {
+  position: relative;
+  flex: 1 1 auto;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  cursor: pointer;
+}
+.music-player__fill {
+  position: relative;
+  width: 0;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--vp-c-brand-1);
+}
+.music-player__fill::after {
+  content: '';
+  position: absolute;
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--vp-c-brand-1);
+}
+/* 控制行：上一首 / 播放·暂停 / 下一首（圆框图标）+ 音量图标 + 音量条 */
+.music-modal__player[hidden] { display: none; } /* hidden 属性兜底（组件样式可能覆盖 display） */
+.music-player__row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 1.4rem;
+}
+.music-player__btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1.5px solid var(--vp-c-text-1);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--vp-c-text-1);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+  transition-duration: 0.2s !important;
+}
+.music-player__btn svg { width: 17px; height: 17px; }
+.music-player__btn:hover {
+  border-color: var(--vp-c-brand-1);
+  color: var(--vp-c-brand-1);
+}
+.music-player__btn:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: 2px; }
+.music-player__btn--play { width: 44px; height: 44px; }
+.music-player__btn--play svg { width: 20px; height: 20px; }
+/* 音量图标不带圆框（截图里它就是一枚裸图标） */
+.music-player__btn--vol {
+  width: 34px;
+  height: 34px;
+  border: 0;
+}
+.music-player__btn--vol svg { width: 19px; height: 19px; }
+.music-player__vol {
+  width: 74px;
+  accent-color: var(--vp-c-brand-1);
+  cursor: pointer;
+}
+
 /* ===== 响应式 ===== */
 @media (max-width: 900px) {
   .card-grid { grid-template-columns: repeat(2, 1fr); }
@@ -777,6 +1302,11 @@ html.hub-hidden:has(.Layout.article-hub-bg) .card-grid {
      连 UID 都放不下） */
   .home-accounts .accounts-grid { grid-template-columns: 1fr; }
   .home-section { padding: 3rem 1rem; }
+  /* 游乐场枢纽页窄屏也跟另外两个枢纽页一致（3rem）—— 覆盖 .home-games.home-section 的 2rem（十七轮） */
+  html:has(.Layout.playground-hub-bg) .home-section { padding-top: 3rem; padding-bottom: 3rem; }
+  /* 隐藏按钮：窄屏沿用固定定位的基准 top（顶栏 + 0.8rem），只把靠右收成 1rem；
+     原 top:2.7rem 会压进顶栏，已废（十七轮） */
+  .hub-hide-btn { right: 1rem; }
   /* 窄屏把友链卡片收紧一点，避免头像 + 三行文字横向挤爆 */
   .friend-card { gap: 0.8rem; padding: 0.85rem 1rem; }
   .friend-avatar { width: 52px; height: 52px; font-size: 1.25rem; }

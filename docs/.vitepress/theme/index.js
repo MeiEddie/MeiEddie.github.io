@@ -393,15 +393,19 @@ export default {
     //   （理由同下面 articleBg 那段 ⚠️⚠️：onAfterRouteChange 触发时 DOM 还是旧页的）。
     // ⚠️ onAfterRouteChange 是**单值属性不是数组** → 必须链式调用上一份（本文件已有
     //   toggleHomeNav / 来路记录 / articleBg 三处占位，覆盖掉会连累它们）。
-    // ⚠️ 隐藏态**只**在枢纽页生效（CSS 那条规则带 :has(.Layout.article-hub-bg)），
-    //   所以即便这里漏摘类，也不会影响首页 / 文章页。
+    // ⚠️ 隐藏态**只**在枢纽页生效（CSS 那条规则带 :has(.Layout.*-hub-bg)，且只藏 .home-section 内
+    //   除按钮外的子节点），所以即便这里漏摘类，也不会影响首页 / 文章页。按钮现已在文章专区 /
+    //   游乐场 / 友链三页复用同一套标记与委托。
+    // ⚠️⚠️ 2026.9.23 修正：隐藏态**只作用于当前页面**——任何路由变化（含三枢纽页互跳）都复位，
+    //   重新进入某页以"显示"态刷新；不再跨页保留隐藏态。
     // ==========================================================================
     if (!window.__hubHideBound) {
       window.__hubHideBound = true
       const HIDDEN_CLASS = 'hub-hidden'
       // 按钮文案与无障碍属性（图标切换交给 CSS，见上面的类）
-      const HIDE_TEXT = '隐藏'
-      const SHOW_TEXT = '显示'
+      // 2026.9.23 十四轮：文案从「隐藏 / 显示」改成「隐藏内容 / 显示内容」，与按钮放大一起改
+      const HIDE_TEXT = '隐藏内容'
+      const SHOW_TEXT = '显示内容'
       const HIDE_LABEL = '隐藏页面内容，只看壁纸'
       const SHOW_LABEL = '显示页面内容'
       const hubApply = (on) => {
@@ -422,13 +426,18 @@ export default {
         hubApply(!hubIsHidden())
       })
 
-      // 离开枢纽页即复位（默认态就是"显示"，所以首屏初始化不用做事）
+      // 每次路由变化都复位（默认态就是"显示"，首屏初始化不用做事）。
+      // ⚠️⚠️ 隐藏态只对「当前所在页面」生效：在文章专区 / 游乐场 / 友链三枢纽页之间互跳、
+      //   或离开枢纽页回到首页 / 文章页，一律复位为"显示"——重新进入某页也会以显示态刷新。
+      // 站长 2026.9.23 修正：之前保留隐藏态会让 A 页隐藏后跳到 B 页仍隐藏（范围越界）。
       if (router) {
         const prevAfterHub = router.onAfterRouteChange
         router.onAfterRouteChange = async (href) => {
           if (typeof prevAfterHub === 'function') await prevAfterHub(href)
           const reset = () => {
-            if (hubIsHidden() && !document.querySelector('.Layout.article-hub-bg')) hubApply(false)
+            // 只要还藏着就摘掉类，无论新页面是不是枢纽页。
+            // 不依赖「页面上有没有 .hub-hide-btn」判定：那样跨枢纽页互跳会保留隐藏态。
+            if (hubIsHidden()) hubApply(false)
           }
           if (typeof requestAnimationFrame === 'function') requestAnimationFrame(reset)
           else setTimeout(reset, 16)
@@ -476,21 +485,63 @@ export default {
       window.__articleBgBound = true
       const root = document.documentElement
       const mqWide = window.matchMedia('(min-width: 960px)')
-      // 背景此刻该不该铺 —— 口径与 style.css 的两个选择器逐条对齐：
-      //   枢纽页：任何宽度都铺；文章正文页：只有 ≥960 铺（窄屏没有「大容器」托底）。
-      const atHub = () => !!document.querySelector('.Layout.article-hub-bg')
+      // 背景此刻该不该铺 —— 口径与 style.css 的三个选择器逐条对齐：
+      //   枢纽页（任何宽度都铺）：「文章专区」(article-hub-bg)、「友链」(friend-hub-bg) 与「游乐场」(playground-hub-bg)；
+      //   文章正文页：只有 ≥960 铺（窄屏没有「大容器」托底）。
+      //   两页 hub 共享 article-bg-keep 的「跨页不闪」逻辑（各自背景图由 :has 规则决定，
+      //   与 keep 类无关）。
+      const atHub = () =>
+        !!document.querySelector('.Layout.article-hub-bg') ||
+        !!document.querySelector('.Layout.friend-hub-bg') ||
+        !!document.querySelector('.Layout.playground-hub-bg') ||
+        !!document.querySelector('.Layout.art-hall-hub-bg')
       const bgWanted = () =>
         atHub() || (mqWide.matches && !!document.querySelector('.VPSidebar'))
 
       // 只做一件事：把"背景该不该铺"这个状态同步到 <html> 的 keep 类上。
-      // ⚠️ 这里**不做任何"重播淡入"的动作**（三度定稿）：类只是把同一套声明多挂一份、
-      //   用来盖住换页空档；要不要淡入由 CSS 的 `:has()` 选择器自己决定。
-      //   背景已经在（类本来就在）时 classList.add 是空操作 → 动画名从头到尾没变过
-      //   → 浏览器认定为"同一个动画"→ **不重播**。这正是"背景本来就在就别再淡"。
+      // keep 类只是把同一套声明多挂一份、盖住换页空档；要不要淡入由 CSS 的 `:has()`
+      // 选择器自己决定。背景一直在（类本来就在）时 classList.add 是空操作 → 动画名没变
+      // → 浏览器认作"同一动画"→ **不重播**。这正是"背景本来就在就别再淡"。
       const syncBgKeep = () => {
         if (bgWanted()) root.classList.add('article-bg-keep')
         else root.classList.remove('article-bg-keep')
       }
+
+      // 当前页用哪张背景图（决定"互跳时背景换没换"）：
+      //   article-hub / 文章正文页(.VPSidebar) 共用 文章页.jpg → 'article'
+      //   friend-hub → 'friend'、playground-hub → 'playground'；无背景页 → ''
+      const bgImageKey = () => {
+        if (document.querySelector('.Layout.article-hub-bg')) return 'article'
+        if (document.querySelector('.Layout.friend-hub-bg')) return 'friend'
+        if (document.querySelector('.Layout.playground-hub-bg')) return 'playground'
+        if (document.querySelector('.Layout.art-hall-hub-bg')) return 'art-hall'
+        if (mqWide.matches && document.querySelector('.VPSidebar')) return 'article'
+        return ''
+      }
+
+      // 预加载各枢纽页 / 文章区背景图：保证切换时图已在缓存里、瞬间切换不闪白。
+      // （CSS 背景图首次用到才会解码；这里提前 new Image() 触发下载 + 解码。）
+      ;['/assets/img_background/首页.jpg', '/assets/img_background/文章页.jpg',
+        '/assets/img_background/友链页.jpg', '/assets/img_background/游乐场页.jpg',
+        '/assets/img_background/艺术走廊.jpg'].forEach((u) => { const im = new Image(); im.src = u })
+
+      // 上一次**已揭示**的背景 key（'' = 还没记录过 / 或上一页无背景）。
+      // ⚠️⚠️ 判定口径（2026.9.24 二十五轮修订，站长报「除了首页之外的页面背景没有淡入效果」）：
+      //   放行条件是「**背景图换了一张**」，不是「本会话第一次」——
+      //   二十四轮那版写成 `anyBgSeen`（整个会话只放行一次），后果是：只要揭示过任意一张
+      //   背景，之后**所有**页面的黑幕都被 bg-no-curtain 掐掉（实测：首页→文章专区有淡入，
+      //   文章专区→友链→游乐场→艺术走廊全线 animation:none、黑幕最大不透明度恒 0）。
+      //   现在改成逐次比对 key：article / friend / playground / art-hall 各自算一张图，
+      //   `cur !== prevBgKey` 就是"换图了" → 放行黑幕淡入。
+      // ⚠️ 这样仍然完整保住二十四轮的两条诉求 —— 它们都是**同图跨页**，key 不变 → 抑制：
+      //     · 文章专区 → 点进一篇文章（都是 'article'）→ 不闪黑；
+      //     · 文章正文页 → 「返回上一级」回文章专区（都是 'article'）→ 不闪黑。
+      //   ⚠️ 别再退回 `anyBgSeen` 那种"全会话一票"的写法：那等于把首页以外所有页面的
+      //      淡入一起关掉，正是站长这次报的毛病。
+      let prevBgKey = ''
+      // 黑幕重播的令牌：每次"换图放行"自增一次，跨帧摘类前比对 —— 期间又发生导航就作废，
+      // 免得把上一轮的"放行"补执行到新页面（那页可能本该抑制）。
+      let curtainToken = 0
 
       // 视口跨 960 断点时重算（宽 → 窄停在文章页上必须撤掉背景，否则正文压在照片上读不了）
       const onWideChange = () => syncBgKeep()
@@ -502,11 +553,550 @@ export default {
         router.onAfterRouteChange = async (href) => {
           if (typeof prevAfterBg === 'function') await prevAfterBg(href)
           // 见上面 ⚠️⚠️：判定必须等这一帧 —— 这一刻 Vue 刚把新页面挂上，DOM 才是新页的
-          if (typeof requestAnimationFrame === 'function') {
-            requestAnimationFrame(syncBgKeep)
-          } else {
-            setTimeout(syncBgKeep, 16)
+          const afterPaint = () => {
+            syncBgKeep()
+            const cur = bgImageKey()
+            // 2026.9.24（二十五轮）：本次导航是否允许黑幕淡入 —— 判据是"背景图换没换"：
+            //   当前页有背景，且与上一页那张**不是同一张** → 换图，放行淡入；
+            //   其余（同图跨页 = 文章家族内部互跳 / 当前页无背景）→ 抑制黑幕，直接切，
+            //   避免"背景重新加载"的闪黑。
+            const imageChanged = cur !== '' && cur !== prevBgKey
+            prevBgKey = cur
+            // ⚠️⚠️ 关键（实测出来的坑，别把下面两行简化成一句 remove）：
+            //   光把 bg-no-curtain 摘掉**不会**让黑幕重播 —— `article-curtain-out` 这个
+            //   动画名在 body::after 上**一直挂着**（跨页保持类 html.article-bg-keep 也声明了
+            //   同一个名字），浏览器认定为"同一个动画"、且它早就跑完（`both` 填充停在
+            //   opacity:0）→ 名没变 → 不从头跑。
+            //   实测（.workbuddy/tmp/curtain-nav2-probe.cjs，只摘类那版）：文章专区首次有
+            //   淡入，之后友链 / 游乐场 / 艺术走廊的 animationstart 全是 0、黑幕最大不透明度
+            //   恒 0 —— 正是站长报的"除了首页，别的页面背景都没有淡入"。
+            //   ✅ 正确做法 = **先挂抑制类、让动画名真正落成 `none`，下一帧再摘掉** ——
+            //      动画名走了 `none → article-curtain-out`，浏览器才当成一次新动画从头跑。
+            //      这一帧里黑幕是基础态 opacity:0（不会闪），16ms 的延迟肉眼不可见。
+            //   ⚠️ 抑制态必须**先挂**：它同时也是"同图跨页"那一支的终态（挂上就不摘）。
+            root.classList.add('bg-no-curtain')
+            if (!imageChanged) return
+            const token = ++curtainToken
+            requestAnimationFrame(() => {
+              if (token !== curtainToken) return // 期间又导航了 → 作废，交给那一次自己判
+              root.classList.remove('bg-no-curtain')
+            })
           }
+          if (typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(afterPaint)
+          } else {
+            setTimeout(afterPaint, 16)
+          }
+        }
+      }
+    }
+
+    // ==========================================================================
+    // 「艺术走廊」画廊（2026.9.23 新增，docs/艺术走廊.md）
+    // --------------------------------------------------------------------------
+    // 站长口径：卡牌容器放画作 / 照片，鼠标滚轮控制横向左右移动，停止时自动匹配
+    //   最接近的卡牌、做卡牌选择效果（中间大、两边小，参考截图）。
+    // 结构约定见 docs/艺术走廊.md 顶部注释；样式见 sections.css 的「艺术走廊画廊」。
+    // 与门禁 / 复制 / 隐藏按钮同一条约定：**交互一律全局委托、页面里不写脚本**
+    //   （页面 <script setup> 里的监听会随页面卸载失效）。所以这里全部用
+    //   window 级监听 + closest 判定，元素上不挂任何监听 → 换页后 DOM 是新的也照样工作。
+    //   ⚠️ scroll 事件不冒泡，但**捕获阶段**的 window 监听能收到后代元素的 scroll
+    //     （e.target = 滚动元素本身），横向 / 纵向滚动都能捕获到。
+    // 实现要点：
+    //   · 滚轮：竖向 deltaY / 横向 deltaX（触控板横扫、Shift+滚轮）取绝对值大的那个，
+    //     **累加到目标值**，rAF 循环每帧按剩余距离 × 0.18 平滑逼近 —— 直加 scrollLeft
+    //     会一格一格硬跳（站长反馈"一卡一卡"），惯性逼近才是连续滑动。
+    //     preventDefault 挡住页面竖滚（passive:false 才能 prevent）。
+    //   · 吸附：滚轮停稳（160ms 无新滚轮）后，找「中心离视口中心最近」的卡牌，
+    //     惯性滑到它正中 —— 即"停止时自动匹配最接近的卡牌"。
+    //   · 选中效果：滚动**过程中**（rAF 节流）就实时把最近卡牌点亮（.is-active，
+    //     CSS 里放大 + 描边 + 投影），不是等停下才变 —— 滚起来有"焦点跟随"的观感。
+    //   · 点击卡牌 = 直接选中并惯性居中它。
+    //   · 初始化：直链 / 刷新时立即跑一次；SPA 换页后在 onAfterRouteChange 的 rAF 里
+    //     再跑（DOM 才是新页的，同 articleBg 那段的理由）。卡牌宽度是 CSS 写死的，
+    //     offsetLeft 不受图片加载影响 → 初始定位稳定。
+    // ==========================================================================
+    if (!window.__galleryBound) {
+      window.__galleryBound = true
+      const SETTLE_MS = 160
+      // 逐帧逼近系数：每帧走「剩余距离 × 0.18」，指数衰减 → 起步快、收尾缓，
+      // 把滚轮一格一格的硬跳变成连续滑动（站长反馈"一卡一卡"的根因就是直加 scrollLeft）。
+      const LERP_FACTOR = 0.18
+
+      // 卡牌中心在「视口内容坐标系」里的横坐标。⚠️ 必须用 rect 相减来算：
+      // offsetLeft 相对 offsetParent（不一定是滚动视口，中间有无定位的祖先），
+      // 会把外层容器的左边距一并算进去 → 初始落位偏左（站长实测）。
+      // rect 含 transform 缩放，但缩放原点是中心 → 中心点不受影响，放心用。
+      const cardCenter = (vp, card) => {
+        const vpRect = vp.getBoundingClientRect()
+        const cardRect = card.getBoundingClientRect()
+        return vp.scrollLeft + cardRect.left - vpRect.left + cardRect.width / 2
+      }
+
+      // 卡牌中心相对视口中心的偏移，取最小者 = "最接近的卡牌"
+      const nearestCard = (vp) => {
+        const cards = vp.querySelectorAll('.gallery-card')
+        if (!cards.length) return null
+        const vpCenter = vp.scrollLeft + vp.clientWidth / 2
+        let best = null
+        let bestDist = Infinity
+        cards.forEach((card) => {
+          const dist = Math.abs(cardCenter(vp, card) - vpCenter)
+          if (dist < bestDist) { bestDist = dist; best = card }
+        })
+        return best
+      }
+
+      const setActive = (vp, card) => {
+        vp.querySelectorAll('.gallery-card.is-active').forEach((c) => {
+          if (c !== card) c.classList.remove('is-active')
+        })
+        if (card) card.classList.add('is-active')
+      }
+
+      // 惯性滚动：把 scrollLeft 逐帧推向 __galleryTarget（rAF 驱动，一帧一停）。
+      // 每次改 scrollLeft 都会触发 scroll 事件 → 下方捕获监听顺势更新焦点卡牌。
+      const clampLeft = (vp, left) =>
+        Math.min(vp.scrollWidth - vp.clientWidth, Math.max(0, left))
+      const startLerp = (vp) => {
+        if (vp.__galleryLerpRaf) return
+        const step = () => {
+          vp.__galleryLerpRaf = 0
+          if (vp.__galleryTarget == null) return
+          const diff = vp.__galleryTarget - vp.scrollLeft
+          if (Math.abs(diff) < 0.5) {
+            vp.scrollLeft = vp.__galleryTarget
+            return
+          }
+          vp.scrollLeft += diff * LERP_FACTOR
+          vp.__galleryLerpRaf = requestAnimationFrame(step)
+        }
+        vp.__galleryLerpRaf = requestAnimationFrame(step)
+      }
+
+      // 把某张卡牌滚到视口正中（smooth = 惯性滑过去；auto = 初始化时直接落位）
+      const centerCard = (vp, card, smooth) => {
+        if (!card) return
+        const left = clampLeft(vp, cardCenter(vp, card) - vp.clientWidth / 2)
+        if (smooth) {
+          vp.__galleryTarget = left
+          startLerp(vp)
+        } else {
+          vp.scrollLeft = left
+        }
+      }
+
+      // 停稳后吸附：每次滚轮都重置计时器，160ms 没有新滚轮 = 停了 → 惯性滑向最近卡牌
+      const settle = (vp) => {
+        clearTimeout(vp.__gallerySettle)
+        vp.__gallerySettle = setTimeout(() => {
+          centerCard(vp, nearestCard(vp), true)
+        }, SETTLE_MS)
+      }
+
+      // 滚轮 → 累加目标位移（整个委托只此一处需要 passive:false + preventDefault）。
+      // 不再直接动 scrollLeft：只改目标，rAF 循环负责平滑逼近 —— 这是顺滑的关键。
+      window.addEventListener('wheel', (e) => {
+        const vp = e.target instanceof Element ? e.target.closest('.gallery-viewport') : null
+        if (!vp) return
+        e.preventDefault()
+        // 若上一段惯性已停，以当前实际位置为基准续累加（避免陈旧目标叠加跳变）
+        if (!vp.__galleryLerpRaf) vp.__galleryTarget = vp.scrollLeft
+        const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
+        vp.__galleryTarget = clampLeft(vp, vp.__galleryTarget + delta)
+        startLerp(vp)
+        settle(vp)
+      }, { passive: false })
+
+      // 滚动过程中：rAF 节流地更新"焦点卡牌" + 重置吸附计时器（捕获阶段才能收到 scroll）
+      window.addEventListener('scroll', (e) => {
+        const t = e.target
+        if (!(t instanceof Element) || !t.classList.contains('gallery-viewport')) return
+        if (!t.__galleryRaf) {
+          t.__galleryRaf = requestAnimationFrame(() => {
+            t.__galleryRaf = 0
+            setActive(t, nearestCard(t))
+          })
+        }
+        settle(t)
+      }, true)
+
+      // 点击卡牌 = 选中、居中 + 弹出作品弹窗（左图右文）
+      window.addEventListener('click', (e) => {
+        const card = e.target instanceof Element ? e.target.closest('.gallery-card') : null
+        if (!card) return
+        const vp = card.closest('.gallery-viewport')
+        if (!vp) return
+        setActive(vp, card)
+        centerCard(vp, card, true)
+        clearTimeout(vp.__gallerySettle)
+        openArtModal(card)
+      })
+
+      // —— 作品弹窗（2026.9.24 新增）：点击卡牌弹出，左半侧画作、右半侧介绍， ——
+      // —— 右上角 × 关闭（点遮罩 / Esc / 路由变化离开本页也会关）。           ——
+      // 与画廊同一条约定：DOM 由这里动态创建挂到 body，页面里不写脚本；
+      // 内容源 = 艺术走廊.md 里每张卡牌的 .gallery-card__intro 隐藏块。
+      // 样式见 sections.css 的「艺术走廊 · 作品弹窗」一节。
+      const ensureModal = () => {
+        let root = document.getElementById('art-modal')
+        if (root) return root
+        root = document.createElement('div')
+        root.className = 'art-modal'
+        root.id = 'art-modal'
+        root.setAttribute('aria-hidden', 'true')
+        root.innerHTML = '<div class="art-modal__backdrop"></div>' +
+          '<div class="art-modal__panel" role="dialog" aria-modal="true">' +
+            '<button class="art-modal__close" type="button" aria-label="关闭弹窗">✕</button>' +
+            '<div class="art-modal__media"><img class="art-modal__img" alt=""></div>' +
+            '<div class="art-modal__body">' +
+              '<h2 class="art-modal__title"></h2>' +
+              '<div class="art-modal__intro"></div>' +
+            '</div>' +
+          '</div>'
+        document.body.appendChild(root)
+        return root
+      }
+      const closeArtModal = () => {
+        const root = document.getElementById('art-modal')
+        if (!root || !root.classList.contains('is-open')) return
+        root.classList.remove('is-open')
+        document.documentElement.classList.remove('art-modal-open')
+        // 先把焦点还给来源卡牌，再置 aria-hidden（顺序反了会有无障碍警告）
+        if (root.__artReturnFocus && typeof root.__artReturnFocus.focus === 'function') {
+          root.__artReturnFocus.focus()
+        }
+        root.__artReturnFocus = null
+        root.setAttribute('aria-hidden', 'true')
+      }
+      const openArtModal = (card) => {
+        const img = card.querySelector('.gallery-card__img')
+        if (!img) return
+        const name = card.querySelector('.gallery-card__name')
+        const intro = card.querySelector('.gallery-card__intro')
+        const root = ensureModal()
+        root.querySelector('.art-modal__img').src = img.src
+        root.querySelector('.art-modal__img').alt = img.alt || ''
+        root.querySelector('.art-modal__title').textContent = name ? name.textContent : (img.alt || '')
+        root.querySelector('.art-modal__intro').innerHTML = intro ? intro.innerHTML : ''
+        root.__artReturnFocus = card
+        root.classList.add('is-open')
+        root.setAttribute('aria-hidden', 'false')
+        document.documentElement.classList.add('art-modal-open')
+        const closeBtn = root.querySelector('.art-modal__close')
+        if (closeBtn) closeBtn.focus()
+      }
+      // 关闭委托：点 × 或点遮罩关（点在面板内部不关）
+      window.addEventListener('click', (e) => {
+        if (!(e.target instanceof Element)) return
+        const root = e.target.closest('.art-modal')
+        if (!root || !root.classList.contains('is-open')) return
+        if (e.target.closest('.art-modal__close') || e.target.closest('.art-modal__backdrop')) closeArtModal()
+      })
+      // Esc 关闭（弹窗没开时是空操作）
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeArtModal()
+      })
+
+      // 初始化：把中间那张卡牌设为初始焦点并居中（每页视口只初始化一次）
+      const initGalleries = () => {
+        document.querySelectorAll('.gallery-viewport').forEach((vp) => {
+          if (vp.__galleryInit) return
+          vp.__galleryInit = true
+          const cards = vp.querySelectorAll('.gallery-card')
+          if (!cards.length) return
+          const mid = cards[Math.floor(cards.length / 2)]
+          setActive(vp, mid)
+          // 等一帧（布局就绪）再落位，避免初始 scrollLeft 算在旧布局上
+          if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => centerCard(vp, mid, false))
+          else centerCard(vp, mid, false)
+        })
+      }
+      initGalleries()
+      if (router) {
+        const prevAfterGallery = router.onAfterRouteChange
+        router.onAfterRouteChange = async (href) => {
+          if (typeof prevAfterGallery === 'function') await prevAfterGallery(href)
+          // rAF 后 DOM 才是新页的（同 articleBg / hubHide 那两段的理由）
+          // 换页（含从艺术走廊离开）时把弹窗强制关掉，避免挂 body 的浮层带去别的页
+          const run = () => { closeArtModal(); initGalleries() }
+          if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run)
+          else setTimeout(run, 16)
+        }
+      }
+    }
+
+    // ==========================================================================
+    // 顶栏「音乐」按钮 + 音乐弹窗（2026.9.24 二十三轮新增）
+    // --------------------------------------------------------------------------
+    // 按钮由 Layout.vue 的两个插槽渲染（桌面顶栏「友链」右侧 / 移动端抽屉菜单底部），
+    //   这里只管行为 —— 与「返回上一级」同一条约定：DOM 里只留 class。
+    // 曲目清单 MUSIC_LIST（二十四轮 2026.9.24 起按截图样式重做卡片）：
+    //   { title, src, cover, artists: [...] }
+    //   · 音频放 docs/assets/music/、圆形封面放 docs/assets/img_music/（文件名同名最省事）；
+    //   · cover 用 object-fit:cover 圆形裁选展示（站长口径：不拉伸，能裁多大裁多大）；
+    //   · artists 一行一个（截图里「Puth/Andrew」那种每行一条的格式）。
+    //   ⚠️ src/cover 一律写 /assets/... **绝对路径**（与文章插图同一条铁律：
+    //      中文文件名 + 相对路径 build 会直接挂）。
+    // 弹窗 DOM 动态建挂 body；关闭 = × / 点遮罩 / Esc / 路由变化。
+    //   ⚠️ 位置：**不居中**，面板钉在导航栏正下方、横向锚在「音乐」按钮下面（下拉卡片）。
+    // ⚠️ 关弹窗**故意不停音乐**（BGM 设定：弹窗只是操作面板，声音跨页继续走）。
+    // 播放器自绘（上一首 / 播放·暂停 / 下一首 / 静音 + 音量条 + 可点进度条），
+    //   不用 <audio controls> —— 原生控件的样子与本站语言不一致、换肤后更突兀。
+    // ==========================================================================
+    if (!window.__musicBound) {
+      window.__musicBound = true
+      const MUSIC_LIST = [
+        {
+          title: 'Por Una Cabeza',
+          artists: ['Thomas Newma'],
+          src: '/assets/music/PorUnaCabeza-ThomasNewma.mp3',
+          cover: '/assets/img_music/PorUnaCabeza-ThomasNewma.jpg'
+        },
+        // { title: '曲名', artists: ['作者'], src: '/assets/music/曲名.mp3', cover: '/assets/img_music/封面.jpg' },
+      ]
+      // 打开弹窗时是否自动播第一首（默认关：进来先挑歌，别一开门就响）
+      const AUTOPLAY_ON_OPEN = false
+      let musicIndex = -1 // 当前曲目下标，-1 = 还没选过
+
+      const fmtTime = (sec) => {
+        if (!isFinite(sec) || sec < 0) sec = 0
+        const m = Math.floor(sec / 60)
+        const s = Math.floor(sec % 60)
+        return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s
+      }
+      // 顶栏按钮的「正在播放」态（桌面 / 移动端两份按钮一起翻）
+      const setBtnPlaying = (on) => {
+        document.querySelectorAll('.music-nav-btn').forEach((b) => {
+          b.classList.toggle('is-playing', !!on)
+        })
+      }
+      // 播放器图标（SVG，fill 跟随 currentColor → 亮暗自适配）
+      const ICONS = {
+        prev: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h2.2v14H6z"/><path d="M20 5.5v13L9.5 12z"/></svg>',
+        next: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.8 5H18v14h-2.2z"/><path d="M4 5.5v13L14.5 12z"/></svg>',
+        play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>',
+        pause: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.4z"/></svg>',
+        vol: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z"/><path d="M14.8 8.4a5 5 0 0 1 0 7.2l1.4 1.4a7 7 0 0 0 0-10l-1.4 1.4z"/></svg>',
+        muted: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z"/><path d="M15.2 9.8l1.3-1.3 1.7 1.7 1.7-1.7 1.3 1.3-1.7 1.7 1.7 1.7-1.3 1.3-1.7-1.7-1.7 1.7-1.3-1.3 1.7-1.7z"/></svg>'
+      }
+      const ensureMusicModal = () => {
+        let root = document.getElementById('music-modal')
+        if (root) return root
+        root = document.createElement('div')
+        root.className = 'music-modal'
+        root.id = 'music-modal'
+        root.setAttribute('aria-hidden', 'true')
+        root.innerHTML =
+          '<div class="music-modal__backdrop"></div>' +
+          '<div class="music-modal__panel" role="dialog" aria-modal="true" aria-label="音乐">' +
+            '<button class="music-modal__close" type="button" aria-label="关闭">✕</button>' +
+            '<h2 class="music-modal__title">音乐</h2>' +
+            '<p class="music-modal__empty" hidden></p>' +
+            '<div class="music-modal__player" hidden>' +
+              '<div class="music-player__meta">' +
+                '<span class="music-player__cover"><img class="music-player__img" alt=""></span>' +
+                '<div class="music-player__artists"></div>' +
+              '</div>' +
+              '<div class="music-player__progress">' +
+                '<span class="music-player__cur">00:00</span>' +
+                '<div class="music-player__bar"><div class="music-player__fill"></div></div>' +
+                '<span class="music-player__total">00:00</span>' +
+              '</div>' +
+              '<div class="music-player__row">' +
+                '<button class="music-player__btn" type="button" data-act="prev" aria-label="上一首">' + ICONS.prev + '</button>' +
+                '<button class="music-player__btn music-player__btn--play" type="button" data-act="toggle" aria-label="播放 / 暂停">' + ICONS.play + '</button>' +
+                '<button class="music-player__btn" type="button" data-act="next" aria-label="下一首">' + ICONS.next + '</button>' +
+                '<button class="music-player__btn music-player__btn--vol" type="button" data-act="mute" aria-label="静音 / 取消静音">' + ICONS.vol + '</button>' +
+                '<input class="music-player__vol" type="range" min="0" max="1" step="0.01" value="1" aria-label="音量">' +
+              '</div>' +
+            '</div>' +
+            '<audio class="music-modal__audio" preload="metadata"></audio>' +
+          '</div>'
+        document.body.appendChild(root)
+        const audio = root.querySelector('.music-modal__audio')
+        audio.addEventListener('play', () => { setBtnPlaying(true); syncPlayIcon() })
+        audio.addEventListener('pause', () => { setBtnPlaying(false); syncPlayIcon() })
+        audio.addEventListener('ended', () => { if (MUSIC_LIST.length > 1) playAt(musicIndex + 1) })
+        audio.addEventListener('timeupdate', () => {
+          const fill = root.querySelector('.music-player__fill')
+          const cur = root.querySelector('.music-player__cur')
+          if (fill && audio.duration) fill.style.width = (audio.currentTime / audio.duration * 100) + '%'
+          if (cur) cur.textContent = fmtTime(audio.currentTime)
+        })
+        audio.addEventListener('loadedmetadata', () => {
+          const total = root.querySelector('.music-player__total')
+          if (total) total.textContent = fmtTime(audio.duration)
+        })
+        return root
+      }
+      // 播放中态同步到 UI：播放键图标 ⏸/▶（SVG）
+      const syncPlayIcon = () => {
+        const root = document.getElementById('music-modal')
+        if (!root) return
+        const audio = root.querySelector('.music-modal__audio')
+        const btn = root.querySelector('[data-act="toggle"]')
+        if (btn) btn.innerHTML = audio && !audio.paused ? ICONS.pause : ICONS.play
+      }
+      // 把当前曲目（或空态）刷进卡片：标题 / 圆形封面 / 艺术家列表
+      const renderCard = () => {
+        const root = document.getElementById('music-modal')
+        if (!root) return
+        const player = root.querySelector('.music-modal__player')
+        const empty = root.querySelector('.music-modal__empty')
+        const title = root.querySelector('.music-modal__title')
+        if (!MUSIC_LIST.length) {
+          if (player) player.hidden = true
+          if (title) title.textContent = '音乐'
+          if (empty) {
+            empty.hidden = false
+            empty.innerHTML = '音乐还没上架 —— 把音频文件放进 <code>docs/assets/music/</code>、' +
+              '圆形封面放进 <code>docs/assets/img_music/</code>，再到 <code>theme/index.js</code>' +
+              ' 的 MUSIC_LIST 里登记一行，这里就会自动出现曲目。'
+          }
+          return
+        }
+        const m = MUSIC_LIST[Math.max(0, musicIndex)]
+        if (empty) empty.hidden = true
+        if (player) player.hidden = false
+        if (title) title.textContent = m.title || m.src
+        const img = root.querySelector('.music-player__img')
+        const cover = root.querySelector('.music-player__cover')
+        if (img) {
+          img.src = m.cover || ''
+          img.alt = m.title || ''
+        }
+        if (cover) cover.hidden = !m.cover
+        const artists = root.querySelector('.music-player__artists')
+        if (artists) {
+          const list = Array.isArray(m.artists) && m.artists.length
+            ? m.artists
+            : (m.artist ? [m.artist] : [])
+          artists.innerHTML = ''
+          artists.hidden = !list.length
+          list.forEach((a) => {
+            const d = document.createElement('div')
+            d.className = 'music-player__artist'
+            d.textContent = a
+            artists.appendChild(d)
+          })
+        }
+      }
+      const playAt = (i) => {
+        if (!MUSIC_LIST.length) return
+        const root = ensureMusicModal()
+        const audio = root.querySelector('.music-modal__audio')
+        musicIndex = (i + MUSIC_LIST.length) % MUSIC_LIST.length
+        audio.src = MUSIC_LIST[musicIndex].src
+        renderCard()
+        syncPlayIcon()
+        // 浏览器可能以「无用户手势」拒播（例如跨页自动续播）→ 静默忽略，别抛未捕获异常
+        const p = audio.play()
+        if (p && typeof p.catch === 'function') p.catch(() => {})
+      }
+      const togglePlay = () => {
+        const root = document.getElementById('music-modal')
+        if (!root) return
+        const audio = root.querySelector('.music-modal__audio')
+        if (!audio.src) { playAt(0); return }
+        if (audio.paused) {
+          const p = audio.play()
+          if (p && typeof p.catch === 'function') p.catch(() => {})
+        } else {
+          audio.pause()
+        }
+      }
+      const openMusicModal = () => {
+        const root = ensureMusicModal()
+        renderCard()
+        // 「在上方栏下面弹出」：面板钉在导航栏正下方（CSS top），横向锚在「音乐」按钮
+        // 正下方（下拉卡片）；按钮不在（<960px 藏进抽屉）时退化为水平居中。
+        const panel = root.querySelector('.music-modal__panel')
+        const btn = document.querySelector('.VPNavBar .music-nav-btn')
+        if (panel) {
+          if (btn && btn.offsetWidth > 0) {
+            const r = btn.getBoundingClientRect()
+            const w = panel.offsetWidth || 360
+            const left = Math.min(Math.max(12, r.right - w), window.innerWidth - w - 12)
+            panel.style.left = left + 'px'
+            panel.style.transform = 'none'
+          } else {
+            panel.style.left = '50%'
+            panel.style.transform = 'translateX(-50%)'
+          }
+        }
+        root.classList.add('is-open')
+        root.setAttribute('aria-hidden', 'false')
+        document.documentElement.classList.add('music-modal-open')
+        if (AUTOPLAY_ON_OPEN && MUSIC_LIST.length && musicIndex < 0) playAt(0)
+        const closeBtn = root.querySelector('.music-modal__close')
+        if (closeBtn) closeBtn.focus()
+      }
+      const closeMusicModal = () => {
+        const root = document.getElementById('music-modal')
+        if (!root || !root.classList.contains('is-open')) return
+        root.classList.remove('is-open')
+        document.documentElement.classList.remove('music-modal-open')
+        root.setAttribute('aria-hidden', 'true')
+        // ⚠️ 故意不 pause()：关弹窗 = 收起面板，音乐继续放（BGM 设定）
+      }
+      // 点击委托：顶栏「音乐」按钮 → 开弹窗；弹窗内 → × / 遮罩 / 播放控制 / 进度条
+      window.addEventListener('click', (e) => {
+        if (!(e.target instanceof Element)) return
+        if (e.target.closest('.music-nav-btn')) { openMusicModal(); return }
+        const root = e.target.closest('.music-modal')
+        if (!root || !root.classList.contains('is-open')) return
+        if (e.target.closest('.music-modal__close') || e.target.closest('.music-modal__backdrop')) {
+          closeMusicModal()
+          return
+        }
+        const actBtn = e.target.closest('[data-act]')
+        if (actBtn) {
+          const act = actBtn.dataset.act
+          if (act === 'toggle') togglePlay()
+          else if (act === 'prev') playAt(musicIndex - 1)
+          else if (act === 'next') playAt(musicIndex + 1)
+          else if (act === 'mute') {
+            const audio = root.querySelector('.music-modal__audio')
+            const volBtn = root.querySelector('[data-act="mute"]')
+            audio.muted = !audio.muted
+            if (volBtn) volBtn.innerHTML = audio.muted ? ICONS.muted : ICONS.vol
+          }
+          return
+        }
+        const bar = e.target.closest('.music-player__bar')
+        if (bar) {
+          const audio = root.querySelector('.music-modal__audio')
+          if (!audio.duration) return
+          const rect = bar.getBoundingClientRect()
+          const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width))
+          audio.currentTime = ratio * audio.duration
+        }
+      })
+      // 音量条（input 事件实时跟手；往上拖时若处于静音则自动取消静音）
+      window.addEventListener('input', (e) => {
+        if (!(e.target instanceof Element) || !e.target.classList.contains('music-player__vol')) return
+        const root = document.getElementById('music-modal')
+        if (!root) return
+        const audio = root.querySelector('.music-modal__audio')
+        const v = Number(e.target.value)
+        audio.volume = v
+        if (v > 0 && audio.muted) {
+          audio.muted = false
+          const volBtn = root.querySelector('[data-act="mute"]')
+          if (volBtn) volBtn.innerHTML = ICONS.vol
+        }
+      })
+      // Esc 关闭（弹窗没开时是空操作）
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeMusicModal()
+      })
+      // 换页：弹窗强制关（音乐继续放，跨页不中断）
+      if (router) {
+        const prevAfterMusic = router.onAfterRouteChange
+        router.onAfterRouteChange = async (href) => {
+          if (typeof prevAfterMusic === 'function') await prevAfterMusic(href)
+          closeMusicModal()
         }
       }
     }

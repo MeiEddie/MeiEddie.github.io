@@ -7,5 +7,9 @@ docs/.vitepress/cache/
 # Vite 加载 config 时的中间产物（config.mjs.timestamp-*.mjs）
 docs/.vitepress/config.mjs.timestamp-*.mjs
 
+# WorkBuddy 工作数据：tmp 里是探针脚本 / 临时产物（动辄几百 MB），不入库；
+# memory 里的项目记忆**保留入库**（跨设备要能用，别连它一起忽略）
+.workbuddy/tmp/
+
 .DS_Store
 Thumbs.db

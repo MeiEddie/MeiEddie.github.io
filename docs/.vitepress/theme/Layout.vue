@@ -47,5 +47,34 @@ const isDocPage = computed(() => {
         <span class="back-btn__text">返回上一级</span>
       </button>
     </template>
+
+    <!-- ==========================================================================
+         顶栏「音乐」按钮（2026.9.24 二十三轮新增）
+         挂 #nav-bar-content-after：该插槽在 VPNavBar.vue 里位于 <VPNavBarMenu>
+         **之后**（亮暗开关 / 汉堡按钮也在它前后），所以样式里用 flex order 把这一格
+         提回菜单末尾 —— 视觉上就是「友链 | 音乐 | 亮暗开关」；
+         尺寸/配色复用顶栏那套 --vp-nav-item-* 变量（见 style.css 第 6 节），
+         与其它导航项同形。
+         移动端（<960px）顶栏菜单是收进汉堡菜单的，那一格不会显示 → 再用
+         #nav-screen-content-after 在展开的抽屉菜单底部补一份（class 带 --screen，
+         样式里改成整行宽）。
+         ⚠️ 与「返回上一级」同一条约定：这里**只渲染按钮**，点击行为全在
+            theme/index.js 的「音乐弹窗」全局委托里（.music-nav-btn）。
+         ⚠️ 音乐**不在 config.mjs 的 nav 里**：nav 项必须是链接，点了会跳路由
+            或 404；这里要的是「弹窗」，用真按钮才不会留死链。
+         ========================================================================== -->
+    <template #nav-bar-content-after>
+      <button class="music-nav-btn" type="button" aria-label="音乐" title="音乐">
+        <svg class="music-nav-btn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 17.5V5.5l10-2v11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="18" r="2.6" fill="currentColor"/><circle cx="16.5" cy="15" r="2.6" fill="currentColor"/></svg>
+        <span class="music-nav-btn__text">音乐</span>
+      </button>
+    </template>
+
+    <template #nav-screen-content-after>
+      <button class="music-nav-btn music-nav-btn--screen" type="button" aria-label="音乐" title="音乐">
+        <svg class="music-nav-btn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 17.5V5.5l10-2v11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="18" r="2.6" fill="currentColor"/><circle cx="16.5" cy="15" r="2.6" fill="currentColor"/></svg>
+        <span class="music-nav-btn__text">音乐</span>
+      </button>
+    </template>
   </DefaultTheme.Layout>
 </template>

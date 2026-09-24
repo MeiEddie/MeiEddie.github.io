@@ -595,11 +595,17 @@
    生效范围 = 站长说的「文章区」，由**纯 CSS 选择器**判定（不写 JS）：
      · 文章正文页     —— `html:has(.VPSidebar)`
        （有侧边栏 = 有「大容器」托底 = 读得安全；已核对 config.mjs 的 sidebar
-        覆盖了全部 9 个栏目，首页 / 友链 / 文章专区三页不在其中）
+        覆盖了全部 9 个栏目，首页 / 友链 / 文章专区 / 游乐场四页不在其中）
      · 「文章专区」枢纽页 —— `html:has(.Layout.article-hub-bg)`
        （打标方式：docs/文章专区.md 的 frontmatter `pageClass: article-hub-bg`，
         VitePress 会把 pageClass 挂到 .Layout 上）
-     首页 / 友链 两个选择器都不命中 → 不铺背景，保持原样。
+     · 「友链」枢纽页   —— `html:has(.Layout.friend-hub-bg)`
+       （打标方式：docs/友链/index.md 的 frontmatter `pageClass: friend-hub-bg`，
+        与文章专区同款黑纱 + 浅色标题，图换成 友链页.jpg；任何宽度都铺）
+     · 「游乐场」枢纽页 —— `html:has(.Layout.playground-hub-bg)`
+       （打标方式：docs/游乐场.md 的 frontmatter `pageClass: playground-hub-bg`，
+        与友链同款均匀黑纱 + 浅色标题，图换成 游乐场页.jpg；任何宽度都铺）
+     首页 不命中 → 不铺背景，保持原样。
    --------------------------------------------------------------------------
    层级：**页面最底层**。做法是 body::before 用 position:fixed + z-index:-1，
         压在全部内容之下（正文、大容器、侧边栏、顶栏都浮在它上面）。
@@ -640,6 +646,14 @@
 :root {
   /* 背景图路径（相对本 CSS 文件定位），换图只改这里 */
   --article-bg-image: url('../../assets/img_background/文章页.jpg');
+  /* 友链页背景图（docs/assets/img_background/友链页.jpg）。友链页用 friend-hub-bg 单独挂，
+     与文章页.jpg 互不连坐 —— 改图只动这一处。遮罩用本页专用 --friend-hub-scrim（整幅均匀黑纱，
+     见该变量说明；与文章专区 --article-hub-scrim 互不连坐）。 */
+  --friend-bg-image: url('../../assets/img_background/友链页.jpg');
+  /* 游乐场页背景图（docs/assets/img_background/游乐场页.jpg）。游乐场页用 playground-hub-bg 单独挂，
+     与文章页.jpg 互不连坐 —— 改图只动这一处。遮罩用本页专用 --playground-hub-scrim（整幅均匀黑纱，
+     同款「黑幕淡入 + 浅色标题」，与友链 / 文章专区同形）。 */
+  --playground-bg-image: url('../../assets/img_background/游乐场页.jpg');
 
   /* 整体遮罩（scrim）：2026.9.22 由「全屏均匀」改为**垂直渐变**。
      —— 起因：站长反馈「亮色太白、暗色太黑」。均匀遮罩为了保标题可读性只能整幅压到
@@ -732,6 +746,38 @@
     rgba(0, 0, 0, 0.08) 100%
   );
 
+  /* —— 「友链」枢纽页专用遮罩（--friend-hub-scrim，2026.9.23 十一轮新增）——
+     站长口径：「友链背景的上方有些暗，不要做局部亮暗分类」—— 即不再沿用文章专区那种
+     「上深下浅」的垂直渐变（顶部 0.62 压暗标题、底部 0.08 放开照片），改成**整幅均匀**
+     的同一档黑纱（两点同色的 linear-gradient = 全程均匀，不受方向影响）。
+     原因：友链页.jpg 作为壁纸，用户希望整张均匀可见、不要顶部被单独压暗。
+     取值：亮色 0.38 / 暗色 0.42 —— 比文章专区渐变顶部 0.62/0.72 明显更浅
+     （顶部不再发暗），又比文章专区底部 0.08 深（照片仍清晰可辨、不会糊成一团）。
+     ⚠️ 这是**独立变量**：文章专区仍是渐变 --article-hub-scrim，两页各用各的、互不连坐
+        （改友链只动这一处，不会把文章专区的渐变带歪）。标题仍用浅色字
+        （见下方「友链」一节 .home-section__title）；0.38 平均对比度约 3.5:1，过 AA-large。 */
+  --friend-hub-scrim: linear-gradient(
+    rgba(0, 0, 0, 0.38),
+    rgba(0, 0, 0, 0.38)
+  );
+  /* —— 「游乐场」枢纽页专用遮罩（--playground-hub-scrim，2026.9.23 续新增）——
+     站长口径「淡入效果、明暗效果相同」：与「友链」同形同值（整幅均匀黑纱，不局部压暗），
+     亮档 0.38 / 暗档 0.42，照抄 --friend-hub-scrim；改游乐场遮罩只动这一处，不连坐其他页。
+     标题仍用浅色字（见下方「游乐场」一节 .home-section__title）；0.38 平均对比度约 3.5:1，过 AA-large。 */
+  --playground-hub-scrim: linear-gradient(
+    rgba(0, 0, 0, 0.38),
+    rgba(0, 0, 0, 0.38)
+  );
+
+  /* —— 「艺术走廊」枢纽页（2026.9.23 新增）——
+     背景图：docs/assets/img_background/艺术走廊.jpg；遮罩与友链 / 游乐场同形同值
+     （整幅均匀黑纱，亮 0.38 / 暗 0.42），改本页遮罩只动这一处，不连坐其他页。 */
+  --art-hall-bg-image: url('../../assets/img_background/艺术走廊.jpg');
+  --art-hall-hub-scrim: linear-gradient(
+    rgba(0, 0, 0, 0.38),
+    rgba(0, 0, 0, 0.38)
+  );
+
   /* —— 通透度（modulate，2026.9.22 八轮新增）——
      站长口径：「把容器都做一些 modulate，让背景可以显现出来」。
      玩法：把文章区里几层"表面"的底色从**不透明**换成**半透明**，照片就从它们后面透出来。
@@ -790,6 +836,25 @@
     rgba(0, 0, 0, 0.38) 52%,
     rgba(0, 0, 0, 0.22) 78%,
     rgba(0, 0, 0, 0.18) 100%
+  );
+
+  /* 「友链」枢纽页遮罩·暗色档（与亮色同形、同款「整幅均匀」黑纱，强度按暗色微调到 0.42）。
+     与亮色逐字对应（只换数值）。 */
+  --friend-hub-scrim: linear-gradient(
+    rgba(0, 0, 0, 0.42),
+    rgba(0, 0, 0, 0.42)
+  );
+  /* 「游乐场」枢纽页遮罩·暗色档（与亮色同形、同款「整幅均匀」黑纱，强度按暗色微调到 0.42）。
+     与亮色逐字对应（只换数值）。 */
+  --playground-hub-scrim: linear-gradient(
+    rgba(0, 0, 0, 0.42),
+    rgba(0, 0, 0, 0.42)
+  );
+
+  /* 「艺术走廊」枢纽页遮罩·暗色档（与亮色同形，强度按暗色微调到 0.42，与友链 / 游乐场同档）。 */
+  --art-hall-hub-scrim: linear-gradient(
+    rgba(0, 0, 0, 0.42),
+    rgba(0, 0, 0, 0.42)
   );
 }
 
@@ -889,6 +954,80 @@ html:has(.Layout.article-hub-bg) body::after {
   animation-iteration-count: 1 !important;
 }
 
+/* —— 「友链」枢纽页：任何宽度都铺（与「文章专区」同款「黑幕淡入」形态，但遮罩换成本页
+   专用的均匀黑纱 --friend-hub-scrim，不再用文章专区的垂直渐变）——
+   友链页.jpg 来自 docs/assets/img_background/友链页.jpg；遮罩用本页专用 --friend-hub-scrim
+   （整幅均匀黑纱，见 :root 里该变量的说明 —— 改友链遮罩只动那一处，不连坐文章专区）。
+   照片层 / 黑幕 / 标题色 照搬上面「文章专区」枢纽页一组，只把图换成 --friend-bg-image、
+   把遮罩换成 --friend-hub-scrim。 */
+html:has(.Layout.friend-hub-bg) {
+  background-color: var(--vp-c-bg);
+}
+html:has(.Layout.friend-hub-bg) body {
+  background-color: transparent;
+}
+html:has(.Layout.friend-hub-bg) body::before {
+  opacity: 1;
+  /* 照片层换用「友链」专用图 + 本页专用**均匀**黑纱（--friend-hub-scrim，整幅同档、
+     顶部不再压暗；与文章专区的垂直渐变 --article-hub-scrim 互不连坐）。 */
+  background-image: var(--friend-hub-scrim), var(--friend-bg-image);
+}
+html:has(.Layout.friend-hub-bg) body::after {
+  animation: article-curtain-out var(--article-curtain-fade) ease both;
+  animation-duration: var(--article-curtain-fade) !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+}
+
+/* —— 「游乐场」枢纽页：任何宽度都铺（与「友链」/「文章专区」同款「黑幕淡入」形态，
+   遮罩换成本页专用的均匀黑纱 --playground-hub-scrim）——
+   游乐场页.jpg 来自 docs/assets/img_background/游乐场页.jpg；遮罩用本页专用 --playground-hub-scrim
+   （整幅均匀黑纱，见 :root 里该变量的说明 —— 改游乐场遮罩只动那一处，不连坐其他页）。
+   照片层 / 黑幕 / 标题色 照搬上面「友链」枢纽页一组，只把图换成 --playground-bg-image、
+   把遮罩换成 --playground-hub-scrim。 */
+html:has(.Layout.playground-hub-bg) {
+  background-color: var(--vp-c-bg);
+}
+html:has(.Layout.playground-hub-bg) body {
+  background-color: transparent;
+}
+html:has(.Layout.playground-hub-bg) body::before {
+  opacity: 1;
+  /* 照片层换用「游乐场」专用图 + 本页专用**均匀**黑纱（--playground-hub-scrim，整幅同档、
+     顶部不压暗；与文章专区的垂直渐变 --article-hub-scrim 互不连坐）。 */
+  background-image: var(--playground-hub-scrim), var(--playground-bg-image);
+}
+html:has(.Layout.playground-hub-bg) body::after {
+  animation: article-curtain-out var(--article-curtain-fade) ease both;
+  animation-duration: var(--article-curtain-fade) !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+}
+
+/* —— 「艺术走廊」枢纽页：任何宽度都铺（与「友链」/「游乐场」同款「黑幕淡入」形态，
+   遮罩换成本页专用的均匀黑纱 --art-hall-hub-scrim）——
+   艺术走廊.jpg 来自 docs/assets/img_background/艺术走廊.jpg；遮罩用本页专用
+   --art-hall-hub-scrim（整幅均匀黑纱，改它只动 :root 里的那一份，不连坐其他页）。
+   照片层 / 黑幕 / 标题色 照搬上面「游乐场」枢纽页一组，只把图换成 --art-hall-bg-image、
+   把遮罩换成 --art-hall-hub-scrim。 */
+html:has(.Layout.art-hall-hub-bg) {
+  background-color: var(--vp-c-bg);
+}
+html:has(.Layout.art-hall-hub-bg) body {
+  background-color: transparent;
+}
+html:has(.Layout.art-hall-hub-bg) body::before {
+  opacity: 1;
+  /* 照片层换用「艺术走廊」专用图 + 本页专用**均匀**黑纱（--art-hall-hub-scrim）。 */
+  background-image: var(--art-hall-hub-scrim), var(--art-hall-bg-image);
+}
+html:has(.Layout.art-hall-hub-bg) body::after {
+  animation: article-curtain-out var(--article-curtain-fade) ease both;
+  animation-duration: var(--article-curtain-fade) !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+}
+
 /* —— 跨页保持：给 SPA 换页的"中间空档"兜底（类由 theme/index.js 挂到 <html> 上） ——
    --------------------------------------------------------------------------
    起因（2026.9.22 二轮，站长反馈「点文章之后背景图还会重新加载一遍」）：
@@ -902,8 +1041,10 @@ html:has(.Layout.article-hub-bg) body::after {
      ⚠️ 这个类**只负责"兜住空档"**，不负责"重播"：类本来就在时 classList.add 是空操作，
         动画名从头到尾没变过 → 浏览器认定为同一个动画。要不要淡入完全交给上面两个
         `:has()` 选择器（它们什么时候开始命中，就什么时候淡入一次）。
-   ⚠️ 这个类只在"背景本该铺"的时候才由 JS 挂上（判定口径与上面两个选择器 + 960 断点
-      逐条对齐）。若在首页/友链误挂，整页会浮出文章区那张照片、黑幕还要再闪一下。
+   ⚠️ 这个类只在"背景本该铺"的时候才由 JS 挂上（判定口径与上面**三个**选择器
+       + 960 断点逐条对齐；2026.9.23 起「友链」「游乐场」枢纽页也算 —— 它和文章专区同属
+       "任何宽度都铺"的 hub 家族，共享这套「跨页不闪」逻辑）。若在首页误挂，
+       整页会浮出背景照片（首页本不该有背景）、黑幕还要再闪一下。
    ⚠️⚠️ 上面两处 `:has()` 规则与本节共**三份**声明必须**逐字一致** —— 只要算出来的
       值不同，就等于"动画名没变但值变了"，浏览器会把它当成一次重启（又白闪一下）。
    ⚠️ 本节（以及另两处）**绝不能**补一句 `opacity: 1`：黑幕的可见性完全由 @keyframes
@@ -923,6 +1064,19 @@ html.article-bg-keep body::after {
   animation-duration: var(--article-curtain-fade) !important;
   animation-delay: 0s !important;
   animation-iteration-count: 1 !important;
+}
+
+/* 抑制黑幕重播（2026.9.24）：当本次导航**背景图没换**（同一张图跨页）时，不再闪黑，
+   背景以"已缓存的图直接切换"呈现 —— 对应「点进梗图 / 返回上一级时背景图不要重新加载」。
+   触发由 theme/index.js 挂/摘 html.bg-no-curtain：**背景图换了一张**才允许黑幕淡入
+   （article / friend / playground / art-hall 各算一张），同图跨页一律抑制。
+   ⚠️ 判据是"图换没换"，**不是**"本会话第几次"—— 早期写成"整个会话只放行一次"时，
+      首页以外所有页面的淡入会被一并关掉（站长 2026.9.24 报的就是这个），别退回。
+   ⚠️ 必须带 !important 才能压过上面 keep 类与各 :has() 规则里同款 article-curtain-out
+      （特异性平手，靠 !important 兜底）。基础态 body::after 的 opacity 已是 0，
+      animation:none 让它停在透明态 → 黑幕不出现。 */
+html.bg-no-curtain body::after {
+  animation: none !important;
 }
 
 /* 枢纽页的标题 / 副标题配色：浅色 + 柔光描影
@@ -952,39 +1106,91 @@ html:has(.Layout.article-hub-bg) .home-section__sub {
   text-shadow: var(--home-hero-text-shadow);
 }
 
+/* 「友链」枢纽页：标题 / 副标题同样翻白（与文章专区共用同一套浅色取值；
+   友链没有 .home-games，故无需 game-group__title 那条）。卡片 / 说明块内部字保持原样
+   （不透明浅色面板）。同款封堵理由见上面「文章专区」那一节。 */
+html:has(.Layout.friend-hub-bg) .home-section__title {
+  color: #f5f7fa;
+  text-shadow: var(--home-hero-text-shadow);
+}
+html:has(.Layout.friend-hub-bg) .home-section__sub {
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: var(--home-hero-text-shadow);
+}
+/* 「游乐场」枢纽页：标题 / 副标题同样翻白（与友链 / 文章专区共用同一套浅色取值）。
+   游乐场**有** .home-games，所以 game-group__title 那条（见下方）也必须覆盖到本页，
+   否则分组小标题仍是深灰、压在黑纱照片上看不清 —— 十三轮在 article-hub-bg 上踩过的同一个坑。
+   卡片 / 说明块内部字保持原样（不透明浅色面板）。 */
+html:has(.Layout.playground-hub-bg) .home-section__title {
+  color: #f5f7fa;
+  text-shadow: var(--home-hero-text-shadow);
+}
+html:has(.Layout.playground-hub-bg) .home-section__sub {
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: var(--home-hero-text-shadow);
+}
+/* 「艺术走廊」枢纽页：标题 / 副标题同样翻白（与友链 / 游乐场共用同一套浅色取值）。
+   本页没有 .home-games，无需 game-group__title 那条。 */
+html:has(.Layout.art-hall-hub-bg) .home-section__title {
+  color: #f5f7fa;
+  text-shadow: var(--home-hero-text-shadow);
+}
+html:has(.Layout.art-hall-hub-bg) .home-section__sub {
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: var(--home-hero-text-shadow);
+}
+/* 「游乐场」页的游戏分组小标题（<h3 class="game-group__title">网页游戏 / 微信小游戏）：
+   2026.9.23 站长截图反馈「这页的字看不清」—— 它就是漏网的那一个：上面的规则只覆盖了
+   .home-section__title / .home-section__sub，而分组小标题自己写的是 var(--vp-c-text-1)
+   （亮色档实测 = 深灰 rgb(60,60,67)），压在黑纱照片上直接糊掉。
+   ⚠️ 用 #ffffff 而非 var(--vp-c-text-*)：要的是**亮暗两档都一样白**，不能跟主题变量走。
+   ⚠️ 仍然带 html:has(.Layout.article-hub-bg) 收窄 —— 现在只有「游乐场」有 .home-games 结构
+      （游戏区 2026.9.23 已从首页迁走），但以后若把游戏区放回别的页，这条不会连坐。
+   ⚠️ 挂在照片上的文字才需要翻白；卡片**内部**（.game-name / .game-meta / .game-date /
+      说明卡的 p、ol）**故意不动** —— 那些卡片是 --vp-c-bg-soft 的浅色实心面板
+      （实测亮档 rgb(246,246,247) 不透明），白字压上去 ≈1.07:1 直接消失。
+      卡片那套样式在 sections.css「个人游戏通道大容器」一节。 */
+html:has(.Layout.article-hub-bg) .home-games .game-group__title,
+html:has(.Layout.playground-hub-bg) .home-games .game-group__title {
+  color: #ffffff;
+  text-shadow: var(--home-hero-text-shadow);
+}
+
 /* ==========================================================================
-   首页顶栏：首屏背景图还在后面时，保持透明
+   顶栏永久透明（2026.9.23 十八轮）
    --------------------------------------------------------------------------
-   默认主题只在「首页 + 尚在页面顶部（scrollY===0）」时让顶栏透明
-   （.VPNavBar.home.top）；滚一下就摘掉 top 类，于是下面几条规则把顶栏刷上底色：
-     .VPNavBar:not(.has-sidebar):not(.home.top)            → 顶栏底色
-     .VPNavBar:not(.has-sidebar):not(.home.top) .content-body → 内容行底色
-     .divider / .divider-line                               → 1px 分隔线
-   结果就是「刚往下滚一点点，照片上方就冒出白条/黑条」。这里把这段区间
-   （0 → 首屏底边滚过顶栏）内的顶栏全部压成透明。
-
-   滚过首屏之后交还给默认主题 —— 白色正文区如果还顶着透明顶栏，
-   正文会和「Eddieの小窝 / Home」叠在一起（实测确实糊成一团），
-   所以这里不做「永远透明」。想强行永远透明：删掉 :not(.home-past-hero) 即可。
-
-   body.home-past-hero 由 theme/index.js 的滚动监听维护。
-   只在 ≥960px 生效：默认主题的顶栏只有在这个断点才 position:fixed
-   （<960px 是普通文档流，不会盖住内容；.screen-open 态也还要靠它自己的底色）。 */
+   站长口径：把上方栏（导航条）做成**永久透明** —— 所有页面、所有滚动状态都不要
+   那条底条 / 分隔线，让背景照片能从顶栏后面透上来；文字、按钮（导航项、亮暗开关）
+   保持原样不动（它们各自有容器 / 颜色保护，见上面 6.1 / 6.2 节）。
+   默认主题只在「首页 + 顶部」时透明，滚一下或离开首页就刷底色（白条/黑条）—— 这里
+   永久压掉。具体规则见下方两个 @media (min-width: 960px) 块。
+   ⚠️ 限定 ≥960px：默认主题顶栏只有这个断点才是 position:fixed 的覆盖层；
+      <960 的 .screen-open（移动端菜单展开态）仍需自己的底色遮挡，别动它。
+   ⚠️ 永久透明后首页滚过首屏不会与正文重叠：fixed 顶栏下内容顶部有
+      padding-top = --vp-nav-height 的偏移，正文从头栏下方才开始。 */
 @media (min-width: 960px) {
-  body:not(.home-past-hero) .VPNavBar.home,
-  body:not(.home-past-hero) .VPNavBar.home .content-body,
-  body:not(.home-past-hero) .VPNavBar.home .divider,
-  body:not(.home-past-hero) .VPNavBar.home .divider-line {
+  /* 永久透明（2026.9.23 十八轮）：所有页面、所有滚动状态都不要顶栏底条/分隔线，
+     让背景照片从顶栏后面透上来；文字、按钮（导航项、亮暗开关）保持原样不动。
+     ⚠️ 限定 ≥960px：默认主题顶栏只有这个断点才是 position:fixed 的覆盖层；
+        <960 的 .screen-open（移动端菜单展开态）仍需自己的底色遮挡，别动它。
+     ⚠️ 默认主题在「非首页」和「首页滚过首屏」都给顶栏刷底色 —— 下面单层
+        .VPNavBar + !important 一起压掉（!important 胜过任意特异性的非 !important）。
+     ⚠️ 永久透明后首页滚过首屏不会重叠：fixed 顶栏下内容顶部有 padding-top =
+        --vp-nav-height 的偏移，正文从头栏下方才开始。 */
+  .VPNavBar,
+  .VPNavBar .content-body,
+  .VPNavBar .divider,
+  .VPNavBar .divider-line {
     background-color: transparent !important;
   }
 }
 
 /* 顶栏透明期间的文字配色：
-   顶栏透明 = 站名/菜单直接压在首屏照片上（照片偏暗 + 黑纱），深色字读不清。
-   暗色主题默认就是浅色文字，不用动；亮色主题在透明窗口内把站名改成
-   与暗色一致的浅色，滚过首屏（body.home-past-hero，顶栏恢复底色）后自动还原。
-   覆盖窗口与上面的透明背景规则严格一致（同 :not(.home-past-hero) + ≥960px），
-   不透明状态完全不受影响。
+   顶栏透明 = 站名直接压在照片/白底上。亮色档在「照片背景」页面，站名（深色）压在照片上
+   读不清 → 翻浅色；普通白底页面（首页滚过首屏、文章正文页）保持默认深色（白底上可读），
+   故用 :has(.Layout.*-hub-bg) 收窄到三个枢纽页。暗色档默认就是浅色文字，无需处理。
+   导航菜单项（.VPNavBarMenuLink）自己有 --vp-nav-item-bg 浅灰容器护着，深色字在容器内
+   可读，不随顶栏透明变色（属「按钮」，按站长口径不动）。
 
    历史坑（下次改这块先看）：
    ① .title 的颜色在默认主题里是继承来的（同首屏 .text），只覆盖
@@ -993,7 +1199,11 @@ html:has(.Layout.article-hub-bg) .home-section__sub {
       不随透明窗口变色）；
    ③ 移动端菜单展开态（.screen-open）顶栏有自己的底色，别去动它。 */
 @media (min-width: 960px) {
-  html:not(.dark) body:not(.home-past-hero) .VPNavBar.home .title {
+  html:not(.dark) body:not(.home-past-hero) .VPNavBar.home .title,
+  html:not(.dark):has(.Layout.article-hub-bg) .VPNavBar .title,
+  html:not(.dark):has(.Layout.friend-hub-bg) .VPNavBar .title,
+  html:not(.dark):has(.Layout.playground-hub-bg) .VPNavBar .title,
+  html:not(.dark):has(.Layout.art-hall-hub-bg) .VPNavBar .title {
     color: #f5f7fa;
   }
 }

@@ -16,9 +16,19 @@
 # 本页**没有**在 config.mjs 的 sidebar 里配 key → 和「文章专区」一样不显示侧边栏。
 layout: page
 title: 友链
+# 背景：docs/assets/img_background/友链.jpg（与「文章专区」同形式：照片层 + 黑纱 + 黑幕淡入 + 浅色标题）。
+# 背景规则见 theme/style.css「文章区背景图」一节里新增的「友链」枢纽页一组。
+pageClass: friend-hub-bg
 ---
 
 <section class="home-section">
+  <!-- 右侧「隐藏 / 显示」按钮（2026.9.23 十五轮从文章专区复用至此）：功能 / 样式 / 行为同文章专区，
+       见 theme/index.js 的 __hubHideBound 与 theme/sections.css 的「文章专区 · 隐藏按钮」一节。 -->
+  <button class="hub-hide-btn" type="button" aria-pressed="false" aria-label="隐藏页面内容，只看壁纸" title="隐藏页面内容，只看壁纸">
+    <svg class="hub-hide-btn__icon hub-hide-btn__icon--eye" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.6 12S6.4 5.6 12 5.6 21.4 12 21.4 12 17.6 18.4 12 18.4 2.6 12 2.6 12Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+    <svg class="hub-hide-btn__icon hub-hide-btn__icon--eye-off" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.6 12S6.4 5.6 12 5.6 21.4 12 21.4 12 17.6 18.4 12 18.4 2.6 12 2.6 12Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.4 4.4 19.6 19.6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+    <span class="hub-hide-btn__text">隐藏内容</span>
+  </button>
   <h1 class="home-section__title">本站链接</h1>
   <!-- 「本站链接」行：左侧是可见的站点地址（也就是复制内容的唯一来源），右侧「复制」按钮。
        ⚠️ 复制内容不写死在按钮上，而是用 data-copy-from 指向左边那个元素 —— 以后换域名

@@ -237,12 +237,14 @@
     display: none;
   }
 
-  /* 顶栏在侧边栏页要变成不透明实底：
-     默认主题给 .VPNavBar.has-sidebar 的左段（站名那一格）留了 transparent
-     （原本靠侧边栏通高的底色补上）。容器方案下侧边栏不再通高，
-     而正文会往上滚过顶栏 —— 不补这层实底，滚上去的正文会从透明区透出来。 */
+  /* 顶栏在侧边栏页的底色（2026.9.23 十八轮改）：
+     原本这里是「不透明实底」—— 当年大容器方案下正文会滚过顶栏，实底用来挡住正文
+     不从透明区透出来。十八轮起站长口径「顶栏永久透明」，这条改为 transparent，
+     与 style.css「顶栏永久透明」一节同口径（那边对所有页面统一压掉底条）。
+     ⚠️ 代价（永久透明的固有属性）：滚动的正文会从顶栏后面透出来、与站名/按钮短暂重叠
+        —— 这是「永久透明」的必然结果，别再往回改实底；真嫌糊就改半透明毛玻璃。 */
   .VPNavBar.has-sidebar {
-    background-color: var(--vp-nav-bg-color) !important;
+    background-color: transparent !important;
   }
 
   /* ===== 5) 侧边栏内容：分类整行 + 文章行 =====
@@ -274,8 +276,7 @@
   .VPSidebar .nav .group:not(:has(> .VPSidebarItem > .item)) {
     grid-column: 1 / -1;
   }
-  /* 展开中的分类分组：跨满整行（单列下本就满行，留作多列布局的保险） */
-  .VPSidebar .nav .group:has(> .VPSidebarItem.level-0.collapsible:hover),
+  /* 展开中的分类分组（点开后才跨满整行；hover 不再展开，见下方说明） */
   .VPSidebar .nav .group:has(> .VPSidebarItem.level-0.collapsible:not(.collapsed)) {
     grid-column: 1 / -1;
   }
@@ -315,7 +316,7 @@
     overflow-wrap: anywhere;
   }
   /* 折叠箭头：整行条目得让人看出"这行可以展开" → 恢复默认主题的箭头，压小并贴右缘。
-     ⚠️ 默认主题的箭头旋转只认 `.collapsed` 类，而 hover 展开**不会**摘掉这个类（见下一条）。 */
+     ⚠️ 箭头旋转只认 `.collapsed` 类（点开才转），不再依赖 hover。 */
   .VPSidebar .nav .VPSidebarItem.level-0.collapsible > .item .caret {
     display: flex;
     flex: 0 0 auto;
@@ -326,29 +327,29 @@
   .VPSidebar .nav .VPSidebarItem.level-0.collapsible > .item .caret-icon {
     font-size: 14px;
   }
-  /* ⚠️ 展开态必须显式把箭头转下来：默认主题靠 `.collapsed` 类切 0° / 90°，
-     而本方案是"hover 即展开"——hover 时 `.collapsed` 类还在（能点开但类名不变），
-     不补这条就会"列表已经铺开、箭头还指着右边"。 */
-  .VPSidebar .nav .VPSidebarItem.level-0.collapsible:hover > .item .caret-icon,
+  /* 展开态把箭头转下来：只认 `.collapsed` 类（点开 → 类被摘掉 → 箭头转下）。
+     本方案 hover 不再展开，所以这里不挂 :hover，箭头只在"真正点开"时转。 */
   .VPSidebar .nav .VPSidebarItem.level-0.collapsible:not(.collapsed) > .item .caret-icon {
     transform: rotate(90deg);
   }
-  /* 当前页所在的分类 —— 条目条描一圈品牌色 */
-  .VPSidebar .nav .VPSidebarItem.level-0.collapsible.has-active > .item,
-  .VPSidebar .nav .VPSidebarItem.level-0.collapsible:hover > .item {
+  /* 当前页所在的分类 —— 条目条描一圈品牌色（路由驱动，与 hover 无关） */
+  .VPSidebar .nav .VPSidebarItem.level-0.collapsible.has-active > .item {
     border-color: var(--vp-c-brand-1);
+  }
+  /* hover：按钮底色加深（仅视觉反馈，不展开；展开交给点击切换 .collapsed） */
+  .VPSidebar .nav .VPSidebarItem.level-0.collapsible > .item:hover {
+    background-color: var(--vp-c-default-soft);
   }
 
   /* — 展开态：文章列表落在条目条**下方** —（条目条与 .items 是块级兄弟，天然上下堆叠） */
 
-  /* — 分类里的文章列表：默认收起，hover 或点开后展开 — */
+  /* — 分类里的文章列表：默认收起，点开（.collapsed 摘掉）后才展开；hover 不再展开 — */
   .VPSidebar .nav .VPSidebarItem.level-0.collapsible > .items {
     display: none !important;
     margin-top: 0;
     min-width: 0;
     padding: 0;
   }
-  .VPSidebar .nav .VPSidebarItem.level-0.collapsible:hover > .items,
   .VPSidebar .nav .VPSidebarItem.level-0.collapsible:not(.collapsed) > .items {
     display: block !important;
     /* 与上方条目条留 6px；整体右缩 8px → 视觉上"挂在"分类条目条下面 */

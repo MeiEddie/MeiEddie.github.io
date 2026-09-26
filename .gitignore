@@ -4,6 +4,10 @@ docs/.vitepress/dist/
 # 构建缓存（Vite 依赖预打包，可自动重建）
 docs/.vitepress/cache/
 
+# VitePress 页面数据临时目录（跑 dev/build 自动重建）
+# ⚠️ 2026.9.26 补：官方模板的 .gitignore 只忽略 dist/cache，漏了它 —— 23 个文件会混进仓库。
+docs/.vitepress/.temp/
+
 # Vite 加载 config 时的中间产物（config.mjs.timestamp-*.mjs）
 docs/.vitepress/config.mjs.timestamp-*.mjs
 
@@ -15,9 +19,12 @@ docs/.vitepress/config.mjs.timestamp-*.mjs
 .workbuddy/*
 !.workbuddy/memory/
 
-# 图片瘦身（2026.9.24 webp 化）的原始图片备份：26 个 .png/.jpg，约 20MB。
+# 图片瘦身（2026.9.24 webp 化）的原始图片备份，约 31MB（30 个原始图）。
 # 站上用的是 docs/assets/** 里转好的 .webp，这份只是本地留档 —— 别推上仓库。
 # ⚠️ 位置就留在项目根；别挪进 docs/，那边是 VitePress 的构建扫描范围。
+# ⚠️⚠️ 2026.9.24 二十八轮：目录由 .img_origin/ **改名为 .assets_origin/**，
+#     这里同步改（漏改会让 31MB 备份直接推进仓库）；旧名一并留着当保险，别删。
+.assets_origin/
 .img_origin/
 
 .DS_Store

@@ -834,6 +834,7 @@ export default {
     // 曲目清单 MUSIC_LIST（二十四轮 2026.9.24 起按截图样式重做卡片）：
     //   { title, src, cover, artists: [...] }
     //   · 音频放 docs/assets/music/、圆形封面放 docs/assets/img_music/（文件名同名最省事）；
+    //   · 音频格式统一 .aac（2026.9.24 二十四轮由 .mp3 全部重编码而来，新曲也照此办理）；
     //   · cover 用 object-fit:cover 圆形裁选展示（站长口径：不拉伸，能裁多大裁多大）；
     //   · artists 一行一个（截图里「Puth/Andrew」那种每行一条的格式）。
     //   ⚠️ src/cover 一律写 /assets/... **绝对路径**（与文章插图同一条铁律：
@@ -850,10 +851,20 @@ export default {
         {
           title: 'Por Una Cabeza',
           artists: ['Thomas Newma'],
-          src: '/assets/music/PorUnaCabeza-ThomasNewma.mp3',
+          src: '/assets/music/PorUnaCabeza-ThomasNewma.aac',
           cover: '/assets/img_music/PorUnaCabeza-ThomasNewma.webp'
         },
-        // { title: '曲名', artists: ['作者'], src: '/assets/music/曲名.mp3', cover: '/assets/img_music/封面.webp' },
+        {
+          title: '幻想即兴曲',
+          artists: ['肖邦'],
+          // 2026.9.24 二十四轮：全站音频格式统一改成 .aac（原来是 .mp3，文件已重编码）。
+          src: '/assets/music/幻想即兴曲.aac',
+          // ⚠️ TODO 封面待补：图放进 docs/assets/img_music/幻想即兴曲.webp 后，
+          //    把下面这行换成 cover: '/assets/img_music/幻想即兴曲.webp' 即可
+          //    （留空字符串时面板会自动隐藏封面圆框，不会破图）。
+          cover: ''
+        },
+        // { title: '曲名', artists: ['作者'], src: '/assets/music/曲名.aac', cover: '/assets/img_music/封面.webp' },
       ]
       // 打开弹窗时是否自动播第一首（默认关：进来先挑歌，别一开门就响）
       const AUTOPLAY_ON_OPEN = false

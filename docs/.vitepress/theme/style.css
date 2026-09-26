@@ -600,7 +600,7 @@
        （打标方式：docs/文章专区.md 的 frontmatter `pageClass: article-hub-bg`，
         VitePress 会把 pageClass 挂到 .Layout 上）
      · 「友链」枢纽页   —— `html:has(.Layout.friend-hub-bg)`
-       （打标方式：docs/友链/index.md 的 frontmatter `pageClass: friend-hub-bg`，
+       （打标方式：docs/友链.md 的 frontmatter `pageClass: friend-hub-bg`，
         与文章专区同款黑纱 + 浅色标题，图换成 友链页.webp；任何宽度都铺）
      · 「游乐场」枢纽页 —— `html:has(.Layout.playground-hub-bg)`
        （打标方式：docs/游乐场.md 的 frontmatter `pageClass: playground-hub-bg`，

@@ -14,9 +14,13 @@
 }
 
 /* 2) 站点标题（左侧 "Eddieの小窝"）放大：默认 16px → 20px；
-      并整体向右移一点（默认贴容器左缘，2026.9.21 按反馈加 28px 左边距） */
+      并整体向右移一点（默认贴容器左缘，2026.9.21 按反馈加 28px 左边距）
+      2026.9.28 再次调大并加粗（站长反馈「站名太小太细」）：20px → 23px、600 → 700。
+      ⚠️ 字重必须 !important：默认主题 VPNavBarTitle.vue 的 .title 自带 font-weight:600，
+         且组件样式带 [data-v-xxx] 作用域属性（特异性更高），不 !important 压不动。 */
 .VPNavBarTitle .title {
-  font-size: 20px !important;
+  font-size: 23px !important;
+  font-weight: 700 !important;
   margin-left: 28px !important;
 }
 
@@ -911,24 +915,29 @@ body::after {
   to { opacity: 0; }
 }
 
-/* —— 文章正文页：≥960 才铺（窄屏没有大容器托底，见文件头说明） —— */
-@media (min-width: 960px) {
-  html:has(.VPSidebar) {
-    background-color: var(--vp-c-bg);
-  }
-  html:has(.VPSidebar) body {
-    background-color: transparent;
-  }
-  html:has(.VPSidebar) body::before {
-    opacity: 1;
-  }
-  html:has(.VPSidebar) body::after {
-    animation: article-curtain-out var(--article-curtain-fade) ease both;
-    /* 系统「减少动态效果」开着时也要保住这次黑幕淡出（反压 base.css 的 0s / 1ms） */
-    animation-duration: var(--article-curtain-fade) !important;
-    animation-delay: 0s !important;
-    animation-iteration-count: 1 !important;
-  }
+/* —— 文章正文页：.VPSidebar 存在即铺（不限宽度）——
+   2026.9.29 修：原先整段包在 @media(min-width:960px) 里，窄屏（<960）侧边栏收进抽屉、
+   但 .VPSidebar 仍在 DOM → 选择器本可命中，却因媒体查询失效整段掉落，正文页露出默认白底
+   （站长反馈"横向压缩时文章样式恢复默认"）。去掉媒体查询限制后：只要 .VPSidebar 在，照片就铺。
+   ⚠️ "大容器外壳"（毛玻璃框 + 侧边栏面板）仍只在 ≥960 画（见 doc-shell.css 的
+      @media(min-width:960px)）—— 窄屏只铺照片、不画大容器，避免移动端拥挤、且正文不会压在照片上读不清。
+   ⚠️ 枢纽页走 html:has(.Layout.article-hub-bg) 那条（不被本段命中，本段要求 .VPSidebar）；
+      首页 / 无侧边栏页无 .VPSidebar → 本段不命中，不会误铺背景。 */
+html:has(.VPSidebar) {
+  background-color: var(--vp-c-bg);
+}
+html:has(.VPSidebar) body {
+  background-color: transparent;
+}
+html:has(.VPSidebar) body::before {
+  opacity: 1;
+}
+html:has(.VPSidebar) body::after {
+  animation: article-curtain-out var(--article-curtain-fade) ease both;
+  /* 系统「减少动态效果」开着时也要保住这次黑幕淡出（反压 base.css 的 0s / 1ms） */
+  animation-duration: var(--article-curtain-fade) !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
 }
 
 /* —— 「文章专区」枢纽页：任何宽度都铺 —— */
@@ -1205,5 +1214,128 @@ html:has(.Layout.playground-hub-bg) .home-games .game-group__title {
   html:not(.dark):has(.Layout.playground-hub-bg) .VPNavBar .title,
   html:not(.dark):has(.Layout.art-hall-hub-bg) .VPNavBar .title {
     color: #f5f7fa;
+  }
+}
+
+/* 6.4) 窄屏补丁（2026.9.28）：<960px 时顶栏文字没翻白，压在首屏照片上看不清
+   --------------------------------------------------------------------------
+   站长截图反馈：横向压缩窗口后，「Eddieの小窝」和右侧「更多」变灰、几乎看不清。
+   根因（两个坑叠在一起）：
+   ① 上面那块翻白规则**整包在 @media (min-width: 960px)** —— <960 时一条都不生效。
+      而默认主题在 <960 恰恰只给「非首页」顶栏刷底色（.VPNavBar:not(.home) 吃
+      --vp-nav-bg-color），**首页 .home 没有这条** → 顶栏仍透明，首屏照片
+      （.VPHero 从 y=0 铺起）直接透上来，站名回落到继承的深色（亮档深灰）压照片上。
+   ② 右侧「更多」= 默认主题的 VPNavBarExtra 浮层按钮（「…」图标，768~1279px 显示、
+      ≥1280 隐藏——这就是「平时看不到、一压缩就冒出来」的原因）。颜色取
+      --vp-c-text-1（亮档深灰），首页顶栏透明时同样压在照片上。
+      ⚠️ 960~1279 区间顶栏虽已永久透明（6.3 节），这个按钮在首页 / 四枢纽页上
+         也压在照片上 —— 同根因，一并翻白，别只补 <960。
+   ⚠️ 只翻「文字 / 图标」，带容器底色的按钮（导航项、亮暗开关）不动（站长口径同 6.3）。
+   ⚠️ .screen-open（窄屏菜单展开态）顶栏有自己的底色，必须排除（历史坑③）。
+   ⚠️ 汉堡按钮（<768 显示）三根线的颜色是 background-color 不是 color，单独写。 */
+@media (max-width: 959px) {
+  html:not(.dark) body:not(.home-past-hero) .VPNavBar.home:not(.screen-open) .title {
+    color: #f5f7fa;
+  }
+}
+/* 「更多」浮层按钮 + 汉堡线：<960 首页首屏照片上翻白（960~1279 见下一块） */
+@media (max-width: 959px) {
+  html:not(.dark) body:not(.home-past-hero) .VPNavBar.home:not(.screen-open) .VPNavBarExtra .button,
+  html:not(.dark) body:not(.home-past-hero) .VPNavBar.home:not(.screen-open) .VPNavBarExtra .icon {
+    color: #f5f7fa;
+    fill: #f5f7fa;
+  }
+  html:not(.dark) body:not(.home-past-hero) .VPNavBar.home:not(.screen-open) .hamburger .top,
+  html:not(.dark) body:not(.home-past-hero) .VPNavBar.home:not(.screen-open) .hamburger .middle,
+  html:not(.dark) body:not(.home-past-hero) .VPNavBar.home:not(.screen-open) .hamburger .bottom {
+    background-color: #f5f7fa;
+  }
+}
+/* 960~1279：「更多」浮层按钮仍显示（≥1280 才隐藏），顶栏已永久透明 →
+   首页首屏 / 四枢纽页的照片都从它后面透上来，一并翻白（与 6.3 同收窄口径） */
+@media (min-width: 960px) and (max-width: 1279px) {
+  html:not(.dark) body:not(.home-past-hero) .VPNavBar.home .VPNavBarExtra .button,
+  html:not(.dark) body:not(.home-past-hero) .VPNavBar.home .VPNavBarExtra .icon,
+  html:not(.dark):has(.Layout.article-hub-bg) .VPNavBar .VPNavBarExtra .button,
+  html:not(.dark):has(.Layout.article-hub-bg) .VPNavBar .VPNavBarExtra .icon,
+  html:not(.dark):has(.Layout.friend-hub-bg) .VPNavBar .VPNavBarExtra .button,
+  html:not(.dark):has(.Layout.friend-hub-bg) .VPNavBar .VPNavBarExtra .icon,
+  html:not(.dark):has(.Layout.playground-hub-bg) .VPNavBar .VPNavBarExtra .button,
+  html:not(.dark):has(.Layout.playground-hub-bg) .VPNavBar .VPNavBarExtra .icon,
+  html:not(.dark):has(.Layout.art-hall-hub-bg) .VPNavBar .VPNavBarExtra .button,
+  html:not(.dark):has(.Layout.art-hall-hub-bg) .VPNavBar .VPNavBarExtra .icon {
+    color: #f5f7fa;
+    fill: #f5f7fa;
+  }
+}
+
+/* 6.5) 「更多」按钮（右上角「…」浮层）放大 + 变粗（2026.9.28）
+   --------------------------------------------------------------------------
+   站长反馈：站名与「更多」都太小太细。站名走第 2 节，这里处理「更多」。
+   它是默认主题 VPNavBarExtra → VPFlyout 里的一个**图标字**（span.vpi-more-horizontal，
+   三点「…」），不是普通文本：
+     · 放大 = 调 font-size（默认 20px → 26px），点会等比例变大；
+     · 变粗 = 图标字吃不到 font-weight（字形由图标字体决定），只能靠描边补：
+       -webkit-text-stroke: 0.6px currentColor —— 用 currentColor 是为了跟着 6.3 / 6.4
+       那套翻白规则一起变（照片上翻白、白底上仍是深色），不用写第二份颜色。
+   ⚠️ 只作用在 .VPNavBar 里的那一个（.VPNavBarExtra），别写成全局 .icon：
+      站点其他 VPFlyout 浮层（侧边栏等）共用同一套类名，会连坐。 */
+.VPNavBar .VPNavBarExtra .icon {
+  font-size: 26px;
+  -webkit-text-stroke: 0.6px currentColor;
+}
+
+/* 6.6) 窄屏（<960）顶栏同样透明（2026.9.28）
+   --------------------------------------------------------------------------
+   站长反馈：「横向压缩的时候，上方栏没有透明」。
+   根因：6.3 那块永久透明整包在 @media (min-width: 960px)，<960 时默认主题
+   `.VPNavBar:not(.home) { background-color: var(--vp-nav-bg-color) }` 照旧生效
+   → 非首页（四枢纽页 / 文章页）在窄屏是一条白/黑实底顶栏，照片被挡住。
+   ⚠️ 为什么 <960 可以放心透明：默认主题 .VPNav 只在 ≥960 才是 position:fixed，
+       <960 是 relative（随页面一起滚走），不会有正文从顶栏后面穿过去的重叠问题。
+   ⚠️ .screen-open（窄屏菜单展开态）必须排除：那个全屏菜单自带 --vp-nav-bg-color 底色，
+      透明了会与页面正文糊在一起（历史坑③）。
+   配套：顶栏一透明，四枢纽页窄屏的照片（body::before 是**任何宽度都铺**的）就会从
+       顶栏后面透上来 → 站名 / 更多 / 汉堡同样要翻白，见下方 6.6 的第二块。 */
+@media (max-width: 959px) {
+  .VPNavBar:not(.screen-open),
+  .VPNavBar:not(.screen-open) .content-body,
+  .VPNavBar:not(.screen-open) .divider,
+  .VPNavBar:not(.screen-open) .divider-line {
+    background-color: transparent !important;
+  }
+
+  /* 顶栏透明后的文字配色：<960 也一样 —— 首页首屏（6.4 已覆盖，这里补四枢纽页）
+     与四枢纽页的照片都从顶栏后面透上来，亮档深色字压照片读不清 → 翻白。
+     ⚠️ 文章正文页不用管：窄屏文章页不铺照片（见「文章正文页：≥960 才铺」那节），
+        顶栏后面是页面底色（亮档白底）→ 深色字正常可读。 */
+  html:not(.dark):has(.Layout.article-hub-bg) .VPNavBar:not(.screen-open) .title,
+  html:not(.dark):has(.Layout.friend-hub-bg) .VPNavBar:not(.screen-open) .title,
+  html:not(.dark):has(.Layout.playground-hub-bg) .VPNavBar:not(.screen-open) .title,
+  html:not(.dark):has(.Layout.art-hall-hub-bg) .VPNavBar:not(.screen-open) .title,
+  html:not(.dark):has(.Layout.article-hub-bg) .VPNavBar:not(.screen-open) .VPNavBarExtra .button,
+  html:not(.dark):has(.Layout.article-hub-bg) .VPNavBar:not(.screen-open) .VPNavBarExtra .icon,
+  html:not(.dark):has(.Layout.friend-hub-bg) .VPNavBar:not(.screen-open) .VPNavBarExtra .button,
+  html:not(.dark):has(.Layout.friend-hub-bg) .VPNavBar:not(.screen-open) .VPNavBarExtra .icon,
+  html:not(.dark):has(.Layout.playground-hub-bg) .VPNavBar:not(.screen-open) .VPNavBarExtra .button,
+  html:not(.dark):has(.Layout.playground-hub-bg) .VPNavBar:not(.screen-open) .VPNavBarExtra .icon,
+  html:not(.dark):has(.Layout.art-hall-hub-bg) .VPNavBar:not(.screen-open) .VPNavBarExtra .button,
+  html:not(.dark):has(.Layout.art-hall-hub-bg) .VPNavBar:not(.screen-open) .VPNavBarExtra .icon {
+    color: #f5f7fa;
+    fill: #f5f7fa;
+  }
+  html:not(.dark):has(.Layout.article-hub-bg) .VPNavBar:not(.screen-open) .hamburger .top,
+  html:not(.dark):has(.Layout.friend-hub-bg) .VPNavBar:not(.screen-open) .hamburger .top,
+  html:not(.dark):has(.Layout.playground-hub-bg) .VPNavBar:not(.screen-open) .hamburger .top,
+  html:not(.dark):has(.Layout.art-hall-hub-bg) .VPNavBar:not(.screen-open) .hamburger .top,
+  html:not(.dark):has(.Layout.article-hub-bg) .VPNavBar:not(.screen-open) .hamburger .middle,
+  html:not(.dark):has(.Layout.friend-hub-bg) .VPNavBar:not(.screen-open) .hamburger .middle,
+  html:not(.dark):has(.Layout.playground-hub-bg) .VPNavBar:not(.screen-open) .hamburger .middle,
+  html:not(.dark):has(.Layout.art-hall-hub-bg) .VPNavBar:not(.screen-open) .hamburger .middle,
+  html:not(.dark):has(.Layout.article-hub-bg) .VPNavBar:not(.screen-open) .hamburger .bottom,
+  html:not(.dark):has(.Layout.friend-hub-bg) .VPNavBar:not(.screen-open) .hamburger .bottom,
+  html:not(.dark):has(.Layout.playground-hub-bg) .VPNavBar:not(.screen-open) .hamburger .bottom,
+  html:not(.dark):has(.Layout.art-hall-hub-bg) .VPNavBar:not(.screen-open) .hamburger .bottom {
+    background-color: #f5f7fa;
   }
 }

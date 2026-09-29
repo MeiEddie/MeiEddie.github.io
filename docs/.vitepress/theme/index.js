@@ -487,7 +487,8 @@ export default {
       const mqWide = window.matchMedia('(min-width: 960px)')
       // 背景此刻该不该铺 —— 口径与 style.css 的三个选择器逐条对齐：
       //   枢纽页（任何宽度都铺）：「文章专区」(article-hub-bg)、「友链」(friend-hub-bg) 与「游乐场」(playground-hub-bg)；
-      //   文章正文页：只有 ≥960 铺（窄屏没有「大容器」托底）。
+      //   文章正文页：.VPSidebar 存在即铺（不限宽度；2026.9.29 起不再卡 ≥960，
+      //   否则窄屏侧边栏收进抽屉、元素仍在 DOM，背景却因媒体查询失效整段掉落）。
       //   两页 hub 共享 article-bg-keep 的「跨页不闪」逻辑（各自背景图由 :has 规则决定，
       //   与 keep 类无关）。
       const atHub = () =>
@@ -496,7 +497,7 @@ export default {
         !!document.querySelector('.Layout.playground-hub-bg') ||
         !!document.querySelector('.Layout.art-hall-hub-bg')
       const bgWanted = () =>
-        atHub() || (mqWide.matches && !!document.querySelector('.VPSidebar'))
+        atHub() || !!document.querySelector('.VPSidebar')
 
       // 只做一件事：把"背景该不该铺"这个状态同步到 <html> 的 keep 类上。
       // keep 类只是把同一套声明多挂一份、盖住换页空档；要不要淡入由 CSS 的 `:has()`
@@ -515,7 +516,7 @@ export default {
         if (document.querySelector('.Layout.friend-hub-bg')) return 'friend'
         if (document.querySelector('.Layout.playground-hub-bg')) return 'playground'
         if (document.querySelector('.Layout.art-hall-hub-bg')) return 'art-hall'
-        if (mqWide.matches && document.querySelector('.VPSidebar')) return 'article'
+        if (document.querySelector('.VPSidebar')) return 'article'
         return ''
       }
 
@@ -856,19 +857,20 @@ export default {
         },
         {
           title: '幻想即兴曲',
-          artists: ['肖邦'],
+          artists: ['F.F.Chopin'],
           // 2026.9.24 二十四轮：全站音频格式统一改成 .aac（原来是 .mp3，文件已重编码）。
           src: '/assets/music/幻想即兴曲.aac',
-          // ⚠️ TODO 封面待补：图放进 docs/assets/img_music/幻想即兴曲.webp 后，
-          //    把下面这行换成 cover: '/assets/img_music/幻想即兴曲.webp' 即可
-          //    （留空字符串时面板会自动隐藏封面圆框，不会破图）。
-          cover: ''
+          // 封面已就位：docs/assets/img_music/幻想即兴曲.webp（站长 2026.9.27 补图）
+          cover: '/assets/img_music/幻想即兴曲.webp'
         },
         // { title: '曲名', artists: ['作者'], src: '/assets/music/曲名.aac', cover: '/assets/img_music/封面.webp' },
       ]
       // 打开弹窗时是否自动播第一首（默认关：进来先挑歌，别一开门就响）
       const AUTOPLAY_ON_OPEN = false
       let musicIndex = -1 // 当前曲目下标，-1 = 还没选过
+      // 进度条拖拽态（2026.9.27）：拖拽中 UI「跟手」但不动播放位置，松手（pointerup）才 seek
+      let barDragging = false
+      let barDragRatio = 0
 
       const fmtTime = (sec) => {
         if (!isFinite(sec) || sec < 0) sec = 0
@@ -930,6 +932,9 @@ export default {
         audio.addEventListener('pause', () => { setBtnPlaying(false); syncPlayIcon() })
         audio.addEventListener('ended', () => { if (MUSIC_LIST.length > 1) playAt(musicIndex + 1) })
         audio.addEventListener('timeupdate', () => {
+          // ⚠️ 拖拽中停更 UI：跟手位置由 pointermove 写入，timeupdate 若继续刷会把它顶回播放位置
+          //   （播放仍在继续 → currentTime 在涨 → 表现成「拖不动 / 不跟手」）。
+          if (barDragging) return
           const fill = root.querySelector('.music-player__fill')
           const cur = root.querySelector('.music-player__cur')
           if (fill && audio.duration) fill.style.width = (audio.currentTime / audio.duration * 100) + '%'
@@ -1019,7 +1024,21 @@ export default {
       }
       const openMusicModal = () => {
         const root = ensureMusicModal()
+        // ⚠️ 2026.9.27 修「首次点开音乐 → 下一首/上一首还是播当前曲目」：
+        //   musicIndex 初始为 -1（还没选过任何曲），而 renderCard 用 Math.max(0,-1)
+        //   显示的是第 0 首；此时点「下一首」= playAt(-1+1)=playAt(0)、「上一首」=
+        //   playAt(-1-1)=playAt(-2)→(0) —— 都落到第 0 首，表现成「点了切换却还是当前曲」。
+        //   解决：首次打开就默认选中第 0 首（仅显示、不自动播放，AUTOPLAY_ON_OPEN 仍是 false），
+        //   之后 next / prev 才真正在 0↔1 之间切换。
+        if (musicIndex < 0) musicIndex = 0
         renderCard()
+        // ⚠️ 2026.9.27 修「第一次点进去，音乐时长不显示」：renderCard 只刷标题/封面/作者，
+        //   从不设 audio.src，于是 loadedmetadata 不触发 → 时长一直停在 HTML 写死的 00:00。
+        //   这里在首开时把当前曲目载入 audio（preload="metadata" 会触发元数据加载，让
+        //   时长立即显示），但**不自动播放**（AUTOPLAY_ON_OPEN 仍为 false）。
+        //   ⚠️ 仅当 audio 还没有任何 src 时才设，避免重新打开面板时把正在播放的 BGM 顶掉。
+        const audio0 = root.querySelector('.music-modal__audio')
+        if (audio0 && !audio0.src) audio0.src = MUSIC_LIST[musicIndex].src
         // 「在上方栏下面弹出」：面板钉在导航栏正下方（CSS top），横向锚在「音乐」按钮
         // 正下方（下拉卡片）；按钮不在（<960px 藏进抽屉）时退化为水平居中。
         const panel = root.querySelector('.music-modal__panel')
@@ -1075,15 +1094,57 @@ export default {
           }
           return
         }
-        const bar = e.target.closest('.music-player__bar')
-        if (bar) {
-          const audio = root.querySelector('.music-modal__audio')
-          if (!audio.duration) return
-          const rect = bar.getBoundingClientRect()
-          const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width))
-          audio.currentTime = ratio * audio.duration
-        }
+        // （进度条的点击 / 拖拽统一由下面的 pointer 事件处理，这里不再单独 seek，
+        //   否则「按下即跳 + 松手再跳」会重复触发。）
       })
+      // 进度条拖拽（2026.9.27 新增）：鼠标 / 手指按住拖动时，填充条与左侧「当前时间」实时跟手，
+      //   但**不改 audio.currentTime、也不动播放 / 暂停状态**（音乐照常播放，状态与拖拽前一致）；
+      //   松手（pointerup / pointercancel）才真正把播放位置跳到拖到的比例。
+      //   ⚠️ 配合上面 timeupdate 的 `if (barDragging) return`，否则播放进度会不断覆盖跟手位置。
+      const ratioFromX = (bar, clientX) => {
+        const rect = bar.getBoundingClientRect()
+        if (!rect.width) return 0
+        return Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+      }
+      const paintBar = (root, ratio) => {
+        const audio = root.querySelector('.music-modal__audio')
+        const fill = root.querySelector('.music-player__fill')
+        const cur = root.querySelector('.music-player__cur')
+        if (fill) fill.style.width = (ratio * 100) + '%'
+        if (cur && audio && isFinite(audio.duration)) cur.textContent = fmtTime(ratio * audio.duration)
+      }
+      window.addEventListener('pointerdown', (e) => {
+        if (!(e.target instanceof Element)) return
+        const bar = e.target.closest('.music-player__bar')
+        if (!bar || !bar.closest('.music-modal.is-open')) return
+        const root = document.getElementById('music-modal')
+        const audio = root && root.querySelector('.music-modal__audio')
+        if (!audio || !audio.duration || !isFinite(audio.duration)) return
+        e.preventDefault()
+        barDragging = true
+        barDragRatio = ratioFromX(bar, e.clientX)
+        paintBar(root, barDragRatio)
+        try { bar.setPointerCapture(e.pointerId) } catch (err) {}
+      })
+      window.addEventListener('pointermove', (e) => {
+        if (!barDragging) return
+        const root = document.getElementById('music-modal')
+        const bar = root && root.querySelector('.music-player__bar')
+        if (!bar) return
+        barDragRatio = ratioFromX(bar, e.clientX)
+        paintBar(root, barDragRatio)
+      })
+      const endBarDrag = () => {
+        if (!barDragging) return
+        barDragging = false
+        const root = document.getElementById('music-modal')
+        const audio = root && root.querySelector('.music-modal__audio')
+        if (audio && audio.duration && isFinite(audio.duration)) {
+          audio.currentTime = barDragRatio * audio.duration
+        }
+      }
+      window.addEventListener('pointerup', endBarDrag)
+      window.addEventListener('pointercancel', endBarDrag)
       // 音量条（input 事件实时跟手；往上拖时若处于静音则自动取消静音）
       window.addEventListener('input', (e) => {
         if (!(e.target instanceof Element) || !e.target.classList.contains('music-player__vol')) return
@@ -1110,6 +1171,246 @@ export default {
           closeMusicModal()
         }
       }
+    }
+
+    // ==========================================================================
+    // 梗图页「随机抽一个」：从「全部梗图」画廊随机抽一张，居中弹窗展示（docs/齐齐哈尔/梗图.md）
+    // --------------------------------------------------------------------------
+    // 画廊用静态 <figure>（SSR / 无 JS 也常显）；随机按钮用事件委托（跨 SPA 路由自动生效）。
+    // 增删梗图 = 改 markdown 里的 <figure> 即可，按钮自动覆盖全部梗图（单一数据源）。
+    // 弹窗 DOM 由这里动态建挂 body（与艺术走廊作品弹窗同约定）；
+    // 关闭 = × / 遮罩 / Esc / 路由变化。
+    // ==========================================================================
+    if (!window.__memeBound) {
+      window.__memeBound = true
+
+      // 弹窗 DOM 懒建挂 body（首次打开时创建，之后复用）
+      const ensureMemeModal = () => {
+        let root = document.getElementById('meme-modal')
+        if (root) return root
+        root = document.createElement('div')
+        root.className = 'meme-modal'
+        root.id = 'meme-modal'
+        root.setAttribute('aria-hidden', 'true')
+        root.innerHTML = '<div class="meme-modal__backdrop"></div>' +
+          '<div class="meme-modal__panel" role="dialog" aria-modal="true">' +
+            '<button class="meme-modal__close" type="button" aria-label="关闭弹窗">✕</button>' +
+            '<img class="meme-modal__img" alt="">' +
+            '<p class="meme-modal__caption"></p>' +
+          '</div>'
+        document.body.appendChild(root)
+        return root
+      }
+      const closeMemeModal = () => {
+        const root = document.getElementById('meme-modal')
+        if (!root || !root.classList.contains('is-open')) return
+        root.classList.remove('is-open')
+        document.documentElement.classList.remove('meme-modal-open')
+        // 先把焦点还给来源按钮，再置 aria-hidden（顺序反了会有无障碍警告）
+        if (root.__memeReturnFocus && typeof root.__memeReturnFocus.focus === 'function') {
+          root.__memeReturnFocus.focus()
+        }
+        root.__memeReturnFocus = null
+        root.setAttribute('aria-hidden', 'true')
+      }
+      const openMemeModal = (name, src) => {
+        const root = ensureMemeModal()
+        root.querySelector('.meme-modal__img').src = src
+        root.querySelector('.meme-modal__img').alt = name
+        root.querySelector('.meme-modal__caption').textContent = name
+        root.__memeReturnFocus = document.getElementById('meme-random-btn')
+        root.classList.add('is-open')
+        root.setAttribute('aria-hidden', 'false')
+        document.documentElement.classList.add('meme-modal-open')
+        const closeBtn = root.querySelector('.meme-modal__close')
+        if (closeBtn) closeBtn.focus()
+      }
+
+      // 点击「随机抽一个」按钮 → 随机取一张并弹窗
+      window.addEventListener('click', (e) => {
+        const btn = e.target instanceof Element ? e.target.closest('.meme-random__btn') : null
+        if (!btn) return
+        const gallery = document.getElementById('meme-gallery')
+        if (!gallery) return
+        const imgs = gallery.querySelectorAll('.meme-gallery__img')
+        if (imgs.length === 0) return
+        const pick = imgs[(Math.random() * imgs.length) | 0]
+        const name = (pick.getAttribute('alt') || '').trim()
+        const src = pick.getAttribute('src') || ''
+        openMemeModal(name, src)
+      })
+      // 关闭委托：点 × 或点遮罩关（点面板内部不关）
+      window.addEventListener('click', (e) => {
+        if (!(e.target instanceof Element)) return
+        const root = e.target.closest('.meme-modal')
+        if (!root || !root.classList.contains('is-open')) return
+        if (e.target.closest('.meme-modal__close') || e.target.closest('.meme-modal__backdrop')) closeMemeModal()
+      })
+      // Esc 关闭（弹窗没开时是空操作）
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeMemeModal()
+      })
+      // 换页：弹窗强制关（避免挂 body 的浮层带去别的页）
+      if (router) {
+        const prevAfterMeme = router.onAfterRouteChange
+        router.onAfterRouteChange = async (href) => {
+          if (typeof prevAfterMeme === 'function') await prevAfterMeme(href)
+          const run = () => closeMemeModal()
+          if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run)
+          else setTimeout(run, 16)
+        }
+      }
+    }
+
+    // ==========================================================================
+    // 笑话页「随机抽一个」：从「全部笑话」随机抽一条，就地显示在按钮下方（docs/齐齐哈尔/笑话.md）
+    // --------------------------------------------------------------------------
+    // 与梗图页同一约定：内容全是 markdown 里的静态 HTML（单一数据源），
+    // 交互只靠事件委托（跨 SPA 路由自动生效）；增删笑话 = 改 md，按钮自动覆盖全部笑话。
+    // ⚠️ 文字笑话不开弹窗（就地展示、连点即换一条），故不建 modal DOM，也不锁滚动。
+    // ==========================================================================
+    if (!window.__jokeBound) {
+      window.__jokeBound = true
+
+      const pickJoke = () => {
+        const list = document.getElementById('joke-list')
+        const out = document.getElementById('joke-random-out')
+        if (!list || !out) return
+        const items = list.querySelectorAll('.joke-item')
+        if (items.length === 0) return
+        // 连点不重复上一条（顺位取下一个，保证仍随机）
+        let idx = (Math.random() * items.length) | 0
+        if (items.length > 1 && idx === pickJoke.__last) idx = (idx + 1) % items.length
+        pickJoke.__last = idx
+        out.innerHTML = items[idx].innerHTML
+        out.removeAttribute('hidden')
+        // 淡入重播：先摘类 → 下一帧再挂（直接挂不会重播）
+        out.classList.remove('is-fresh')
+        const run = () => out.classList.add('is-fresh')
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run)
+        else setTimeout(run, 16)
+      }
+
+      window.addEventListener('click', (e) => {
+        if (!(e.target instanceof Element)) return
+        if (e.target.closest('.joke-random__btn')) pickJoke()
+      })
+    }
+
+    // ==========================================================================
+    // 离线小游戏触发（2026.9.28 新增）
+    // --------------------------------------------------------------------------
+    // 需求：无网络时询问用户是否来一局小游戏，同意则跳到离线游戏页。
+    // 两种离线都覆盖：
+    //   ① 软离线（页面已打开、浏览中途断网）：监听 window 'offline' 事件 → 弹确认框；
+    //   ② 硬离线（断网状态下才打开博客）：靠 public/sw.js 把离线页预缓存成
+    //      navigation fallback，断网打开博客直接兜出游戏页（完整 dino 体验）。
+    // 交互全在主题里，页面不写脚本（与门禁 / 复制 / 隐藏按钮同一条约定）。
+    // ⚠️ 游戏页是占位壳（docs/public/offline_game.html），真实玩法之后再做；
+    //   本文件只负责「断网→询问→跳转」这条链路，不碰任何游戏逻辑、不碰主题 CSS。
+    // ⚠️ SW 只在生产构建注册（import.meta.env.PROD），dev 下不注册以免干扰 HMR。
+    // ==========================================================================
+    if (!window.__offlineGuardBound) {
+      window.__offlineGuardBound = true
+      const GAME_PATH = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '') + '/offline_game.html'
+      // 已在游戏页里就不弹（避免自己问自己）
+      const onGamePage = () =>
+        location.pathname.replace(/\/+$/, '').endsWith('/offline_game.html')
+
+      // —— 弹窗 DOM 懒建挂 body；样式通过一次性注入的 <style> 提供（不碰主题 CSS 文件） ——
+      const ensureOfflineModal = () => {
+        if (!document.getElementById('offline-guard-style')) {
+          const st = document.createElement('style')
+          st.id = 'offline-guard-style'
+          // 暗色主题友好；用 VitePress 现成 CSS 变量，带兜底色
+          st.textContent =
+            '.offline-modal{position:fixed;inset:0;z-index:2000;display:none;' +
+            'align-items:center;justify-content:center;background:rgba(0,0,0,.55)}' +
+            '.offline-modal.is-open{display:flex}' +
+            '.offline-modal__panel{width:min(92vw,380px);border-radius:14px;padding:22px 22px 18px;' +
+            'background:var(--vp-c-bg-soft,#1b1b1f);color:var(--vp-c-text-1,#e6e6e6);' +
+            'border:1px solid var(--vp-c-divider,#2e2e34);box-shadow:0 12px 40px rgba(0,0,0,.45);text-align:center}' +
+            '.offline-modal__title{margin:0 0 8px;font-size:18px;font-weight:700}' +
+            '.offline-modal__desc{margin:0 0 18px;font-size:14px;line-height:1.6;opacity:.85}' +
+            '.offline-modal__row{display:flex;gap:10px;justify-content:center}' +
+            '.offline-modal__btn{flex:1;padding:9px 0;border-radius:9px;border:1px solid var(--vp-c-divider,#2e2e34);' +
+            'background:transparent;color:inherit;font-size:14px;cursor:pointer;transition:background .15s,border-color .15s}' +
+            '.offline-modal__btn:hover{background:var(--vp-c-bg-alt,#26262c)}' +
+            '.offline-modal__btn--primary{background:var(--vp-c-brand,#3b82f6);border-color:var(--vp-c-brand,#3b82f6);color:#fff}' +
+            '.offline-modal__btn--primary:hover{filter:brightness(1.08);background:var(--vp-c-brand,#3b82f6)}'
+          document.head.appendChild(st)
+        }
+        let root = document.getElementById('offline-modal')
+        if (root) return root
+        root = document.createElement('div')
+        root.className = 'offline-modal'
+        root.id = 'offline-modal'
+        root.setAttribute('aria-hidden', 'true')
+        root.innerHTML =
+          '<div class="offline-modal__panel" role="dialog" aria-modal="true" aria-label="离线小游戏">' +
+            '<h2 class="offline-modal__title"></h2>' +
+            '<p class="offline-modal__desc"></p>' +
+            '<div class="offline-modal__row">' +
+              '<button class="offline-modal__btn" type="button" data-act="dismiss">不用了</button>' +
+              '<button class="offline-modal__btn offline-modal__btn--primary" type="button" data-act="play">玩一局</button>' +
+            '</div>' +
+          '</div>'
+        document.body.appendChild(root)
+        return root
+      }
+      const showOfflineModal = (title, desc) => {
+        if (onGamePage()) return
+        const root = ensureOfflineModal()
+        root.querySelector('.offline-modal__title').textContent = title
+        root.querySelector('.offline-modal__desc').textContent = desc
+        root.classList.add('is-open')
+        root.setAttribute('aria-hidden', 'false')
+      }
+      const hideOfflineModal = () => {
+        const root = document.getElementById('offline-modal')
+        if (!root) return
+        root.classList.remove('is-open')
+        root.setAttribute('aria-hidden', 'true')
+      }
+      // ① 软离线：浏览中途断网 → 询问是否来一局
+      window.addEventListener('offline', () => {
+        showOfflineModal('网络已断开', '好像断网了。要不要来一局离线小游戏放松一下？')
+      })
+      // 恢复网络：若弹窗还开着，提示已恢复并引导回博客
+      window.addEventListener('online', () => {
+        const root = document.getElementById('offline-modal')
+        if (root && root.classList.contains('is-open')) {
+          root.querySelector('.offline-modal__title').textContent = '网络已恢复'
+          root.querySelector('.offline-modal__desc').textContent = '可以继续浏览博客了。'
+          const row = root.querySelector('.offline-modal__row')
+          if (row) row.innerHTML =
+            '<button class="offline-modal__btn offline-modal__btn--primary" type="button" data-act="back">返回博客</button>'
+        }
+      })
+      // 弹窗内按钮：玩一局 / 不用了 / 返回博客
+      window.addEventListener('click', (e) => {
+        if (!(e.target instanceof Element)) return
+        const root = e.target.closest('.offline-modal')
+        if (!root || !root.classList.contains('is-open')) return
+        const act = e.target.closest('[data-act]')
+        if (!act) return
+        const a = act.dataset.act
+        if (a === 'play') { hideOfflineModal(); window.location.href = GAME_PATH }
+        else if (a === 'back') { hideOfflineModal(); window.location.href = (import.meta.env.BASE_URL || '/') }
+        else hideOfflineModal()
+      })
+      // ② 硬离线兜底：注册 Service Worker（仅生产构建）
+      const registerOfflineSW = () => {
+        if (!('serviceWorker' in navigator)) return
+        if (!import.meta.env.PROD) return
+        if (window.__offlineSWRegistered) return
+        window.__offlineSWRegistered = true
+        const base = (import.meta.env.BASE_URL || '/')
+        navigator.serviceWorker
+          .register(base + 'sw.js', { scope: base })
+          .catch((err) => console.warn('[offline-guard] SW 注册失败：', err))
+      }
+      registerOfflineSW()
     }
   }
 }

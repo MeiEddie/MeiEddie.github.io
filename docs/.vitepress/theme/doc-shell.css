@@ -99,7 +99,11 @@
     content: "";
     position: fixed;
     top: var(--doc-shell-top);
-    bottom: 0;
+    /* 2026.9.28：底边同样让出 --doc-shell-gap 空位（站长要求「下方也做圆角，
+       和上方一样，且对屏幕边缘有一点距离」）→ 四条边都画、四角都圆。
+       ⚠️ 底边这条缝和顶缝是同一个坑：正文往下滚时会从缝里透出去，
+          必须由 2.2) 的「底部空位遮罩」接手（别删那一层）。 */
+    bottom: var(--doc-shell-gap);
     left: 0;
     right: 0;
     margin: 0 auto;
@@ -112,8 +116,7 @@
     -webkit-backdrop-filter: blur(var(--article-glass-blur));
     backdrop-filter: blur(var(--article-glass-blur));
     border: 1px solid var(--doc-shell-border);
-    /* 底边在视口外，圆角只给上面两个（下面两个给了也看不见） */
-    border-radius: 20px 20px 0 0;
+    border-radius: 20px;
     z-index: 0;
     pointer-events: none;
   }
@@ -151,6 +154,30 @@
     pointer-events: none;
   }
 
+  /* ===== 2.2) 底部空位遮罩（2026.9.28 新增） =====
+     与 2.1) 同一个坑的底部版本：容器底边现在悬在视口底上方 --doc-shell-gap 处，
+     长文往下滚时正文会从这条缝里透出去（盖在裸照片上，非常难看）。
+     做法/约束与 2.1) 逐条相同，只有两处不同：
+       · clip-path 露出的是**底下那一条**：inset(上 内 0 内) → 顶部内缩 `100% - gap`，
+         露出的正是 y = (100% - --doc-shell-gap) ~ 100% 那一条；
+       · 挂载点：.VPContent 的 ::before/::after 都被占用了 → 用 .Layout::after。
+         ⚠️ 必须带 :has(.VPContent.has-sidebar) 收窄（记忆铁律：正文页专属样式要收窄），
+            否则会在没有大容器的页面上白铺一层。
+     ⚠️ 同 2.1)：盒子必须 inset:0（=视口）+ 同款背景，cover 缩放才与 body::before
+        逐像素对齐；z-index: 12 压过正文与目录（10），低于顶栏 30 / 侧边栏 25。 */
+  .Layout:has(.VPContent.has-sidebar)::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    clip-path: inset(calc(100% - var(--doc-shell-gap)) 0 0 0);
+    z-index: 12;
+    background-image: var(--article-bg-scrim), var(--article-bg-image);
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    pointer-events: none;
+  }
+
   /* ===== 3) 正文让位 =====
      左 = 空位 + 内衬 + 侧边栏列 + 缝；右 = 空位 + 内衬。
      ⚠️ 侧边栏在最左，所以"侧边栏那一列"算进 **padding-left**（不是 right）；
@@ -178,10 +205,24 @@
   .VPDoc .aside .aside-curtain {
     width: var(--doc-aside-w) !important;
   }
-  /* 目录是 fixed 定位的：把它对齐到容器内部的顶部，且高度不再超出容器底部 */
+  /* 目录是 fixed 定位的：把它对齐到容器内部的顶部，且高度不再超出容器底部。
+     2026.9.28：容器底边悬空 --doc-shell-gap 后，目录可视高度同步少这一段。 */
   .VPDoc .aside .aside-container {
     padding-top: calc(var(--doc-shell-top) + var(--doc-shell-pad) + 4px) !important;
-    height: calc(100vh - var(--doc-shell-top) - var(--doc-shell-pad)) !important;
+    height: calc(
+      100vh - var(--doc-shell-top) - var(--doc-shell-pad) - var(--doc-shell-gap)
+    ) !important;
+  }
+  /* 目录内容不要被撑满一屏（2026.9.28 修「内容少时目录被滚出容器」）：
+     默认主题给 .aside-content 写了 `min-height: calc(100vh - (nav + 48))`
+     （= 一屏高，实测 772px），而上面把**容器**高压成了 100vh - top - pad - gap
+     （实测 764px）→ 内容永远比容器高 → 目录**恒有**内部滚动条。
+     后果：页面标题少时目录只有三四行，鼠标在目录上滚轮一下，整个目录
+     （连同标题）被向上滚出容器、全部藏起来，且 fixed 容器不会随页面复位。
+     去掉 min-height → 目录多高就多高：短目录不再可滚，长目录溢出照旧可滚。
+     ⚠️ 别改用「缩小容器高度」去适配：容器高度是跟着大容器底边走的，动了就错位。 */
+  .VPDoc .aside .aside-content {
+    min-height: 0 !important;
   }
   /* 目录底部那条渐隐遮罩（默认主题的 `.aside-curtain`）：**八轮起停用**。
      为什么停用：默认主题给它是"fixed + bottom:0 + 高 32px + 一层渐变色"，
@@ -215,7 +256,12 @@
         同时把 right 归位成 auto —— 两个都写，别只改一个（fixed 元素给了 left+right 会被拉伸）。 */
   .VPSidebar {
     top: calc(var(--doc-shell-top) + var(--doc-shell-pad)) !important;
-    bottom: 0 !important;
+    /* 2026.9.28 一轮：面板底边跟着容器一起悬空 --doc-shell-gap（原先贴视口底）。
+       2026.9.28 二轮：只悬空还不对 —— 面板在容器内部**上边缩进了 --doc-shell-pad（24px）、
+       下边却是 0**（直接顶到容器内底缘），上下不对称（站长："下方也要留出边距"）。
+       这里再减去一份 --doc-shell-pad，让面板底边与容器底边之间也留出同宽的空位：
+       面板底边 = 视口底 - gap - pad，与顶边「容器顶 + pad」镜像。 */
+    bottom: calc(var(--doc-shell-gap) + var(--doc-shell-pad)) !important;
     left: calc((100% - var(--doc-shell-w)) / 2 + var(--doc-shell-pad)) !important;
     right: auto !important;
     width: var(--doc-side-w) !important;
@@ -227,8 +273,8 @@
     -webkit-backdrop-filter: blur(var(--article-glass-blur));
     backdrop-filter: blur(var(--article-glass-blur));
     border: 1px solid var(--doc-shell-border);
-    border-bottom: 0;
-    border-radius: 16px 16px 0 0;
+    /* 底边悬空后四边都画、四角都圆（原先 border-bottom:0 + 只圆上两角） */
+    border-radius: 16px;
     box-shadow: none !important;
   }
   /* 默认主题在侧边栏顶部有一条 nav 高的"幕布"（用来盖住顶栏那一段的透明区）。

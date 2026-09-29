@@ -29,9 +29,10 @@ jobs:
 
       - name: Copy static assets into build output
         run: |
-          # VitePress 构建时不会自动把 docs/ 下的静态资源（头像、PDF、图片）
+          # VitePress 构建时不会自动把 docs/ 下的静态资源（PDF、图片）
           # 复制到构建产物，需要手动复制，否则线上访问会 404
-          cp docs/avatar.jpg docs/.vitepress/dist/avatar.jpg
+          # 头像已归入 assets/img_info/avatar.webp（原 docs/avatar.jpg 已删除），
+          # 由下面这条整目录复制一并带上，不要再单独 cp 头像
           cp -r docs/assets/. docs/.vitepress/dist/assets/
 
       - name: Deploy to GitHub Pages

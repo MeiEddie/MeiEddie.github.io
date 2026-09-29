@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>离线小游戏 · 方块跑者</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: #f7f7f7; color: #535353;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 16px;
+  }
+  .topbar {
+    width: 100%; max-width: 640px; display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 10px; font-size: 13px;
+  }
+  .topbar a { color: #535353; text-decoration: none; }
+  .topbar a.disabled { color: #bdbdbd; pointer-events: none; }
+  .net {
+    font-size: 12px; padding: 2px 9px; border-radius: 999px;
+    border: 1px solid #ccc; color: #888;
+  }
+  .net.on { color: #2e7d32; border-color: #a5d6a7; }
+  .net.off { color: #c0392b; border-color: #e6b0aa; }
+  .title { width: 100%; max-width: 640px; font-size: 14px; color: #9a9a9a; margin: 0 0 8px; }
+  .stage { width: 100%; max-width: 640px; }
+  canvas {
+    width: 100%; height: auto; display: block;
+    background: #f7f7f7; border: 2px solid #535353; border-radius: 6px;
+    image-rendering: pixelated; image-rendering: crisp-edges;
+  }
+  .hint { margin-top: 10px; font-size: 12px; color: #9a9a9a; text-align: center; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <a id="back" href="/">&larr; 返回博客</a>
+    <span class="net" id="status">检测中…</span>
+  </div>
+  <p class="title">离线小游戏 · 方块跑者（测试道路版）</p>
+  <div class="stage">
+    <canvas id="game"></canvas>
+  </div>
+  <p class="hint">空格 / ↑ / 点击屏幕 = 跳跃 &nbsp;·&nbsp; 当前为测试版，仅验证道路与跳跃物理</p>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- 画布与像素风 ----------
+  var canvas = document.getElementById('game');
+  var ctx = canvas.getContext('2d');
+  var W = 320, H = 160;            // 逻辑分辨率（低分辨率 + 放大 => 像素感）
+  canvas.width = W;
+  canvas.height = H;
+  ctx.imageSmoothingEnabled = false;
+
+  var COL = { bg: '#f7f7f7', ink: '#535353', cloud: '#d9d9d9' };
+
+  // ---------- 世界参数 ----------
+  var GROUND = 128;   // 地面线 y（主角站在其上）
+  var SIZE   = 16;    // 主角方块边长
+  var GRAV   = 0.5;   // 重力（像素/帧² @60fps）
+  var JUMP   = -8.6;  // 起跳初速度
+  var SPEED  = 2.4;   // 前进速度（像素/帧 @60fps，仅用于路面滚动）
+  var SCORE_RATE = 0.1; // 积分增速（点/帧 @60fps）—— 与路面解耦，单独调慢
+
+  // ---------- 状态 ----------
+  var player = { x: 44, y: GROUND - SIZE, vy: 0, on: true };
+  var dist = 0;       // 累计前进距离（驱动路面滚动）
+  var scoreAcc = 0;   // 积分累计器（按 SCORE_RATE 单独增长）
+  var score = 0;      // 右上角积分（= floor(scoreAcc)）
+  var clouds = [
+    { x: 60,  y: 26, s: 0.25 },
+    { x: 180, y: 16, s: 0.18 },
+    { x: 260, y: 42, s: 0.30 }
+  ];
+
+  // ---------- 输入：跳跃 ----------
+  function jump() {
+    if (player.on) { player.vy = JUMP; player.on = false; }
+  }
+  window.addEventListener('keydown', function (e) {
+    if (e.code === 'Space' || e.key === ' ' || e.key === 'ArrowUp') {
+      if (!e.repeat) jump();
+      e.preventDefault();   // 防止空格滚动页面
+    }
+  });
+  canvas.addEventListener('pointerdown', function () { jump(); });
+
+  // ---------- 离线感知的「返回博客」（防止离线被 SW 兜回时陷入循环）----------
+  var back = document.getElementById('back');
+  var statusEl = document.getElementById('status');
+  function paintNet() {
+    var online = navigator.onLine;
+    statusEl.textContent = online ? '在线' : '离线';
+    statusEl.className = 'net ' + (online ? 'on' : 'off');
+    back.className = online ? '' : 'disabled';
+  }
+  paintNet();
+  window.addEventListener('online', paintNet);
+  window.addEventListener('offline', paintNet);
+  back.addEventListener('click', function (e) {
+    if (!navigator.onLine) {
+      e.preventDefault();
+      statusEl.textContent = '离线中，联网后再返回';
+    }
+  });
+
+  // ---------- 绘制 ----------
+  function drawCloud(c) {
+    ctx.fillStyle = COL.cloud;
+    ctx.fillRect(Math.floor(c.x),       Math.floor(c.y),       22, 6);
+    ctx.fillRect(Math.floor(c.x) + 6,   Math.floor(c.y) - 4,   12, 5);
+  }
+
+  function render() {
+    // 背景
+    ctx.fillStyle = COL.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // 视差云
+    for (var i = 0; i < clouds.length; i++) drawCloud(clouds[i]);
+
+    // 地面线
+    ctx.fillStyle = COL.ink;
+    ctx.fillRect(0, GROUND, W, 3);
+    // 滚动刻度：用 dist 求模制造“路在向后移动”的视觉
+    var spacing = 14;
+    var off = dist % spacing;
+    for (var x = -off; x < W; x += spacing) {
+      ctx.fillRect(Math.floor(x), GROUND + 6, 2, 4);
+    }
+
+    // 主角方块
+    ctx.fillStyle = COL.ink;
+    ctx.fillRect(Math.floor(player.x), Math.floor(player.y), SIZE, SIZE);
+    // 眼睛（留白小像素，增加一点生气，仍是方块）
+    ctx.fillStyle = COL.bg;
+    ctx.fillRect(Math.floor(player.x) + SIZE - 5, Math.floor(player.y) + 4, 2, 2);
+
+    // 积分（右上角）
+    ctx.fillStyle = COL.ink;
+    ctx.font = '12px monospace';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillText(String(score), W - 6, 6);
+  }
+
+  // ---------- 主循环（按刷新率归一化，60/120Hz 速度一致）----------
+  var last = performance.now();
+  function loop(now) {
+    var dt = (now - last) / 16.6667;
+    last = now;
+    if (dt > 2) dt = 2;   // 切后台回来避免大跳
+
+    // 物理
+    player.vy += GRAV * dt;
+    player.y += player.vy * dt;
+    if (player.y + SIZE >= GROUND) {
+      player.y = GROUND - SIZE;
+      player.vy = 0;
+      player.on = true;
+    }
+
+    // 世界推进：路面滚动用 dist；积分单独按较慢速率累计
+    dist += SPEED * dt;
+    scoreAcc += SCORE_RATE * dt;
+    score = Math.floor(scoreAcc);
+    for (var i = 0; i < clouds.length; i++) {
+      var c = clouds[i];
+      c.x -= c.s * SPEED * dt;
+      if (c.x < -30) c.x = W + 20 + Math.random() * 40;
+    }
+
+    render();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

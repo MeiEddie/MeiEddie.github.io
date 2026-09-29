@@ -21,7 +21,7 @@ hero:
       <p class="home-profile__line">This is Eddie's static blog</p>
     </div>
     <!-- 右：头像 -->
-    <img class="home-profile__avatar" src="./avatar.jpg" alt="头像">
+    <img class="home-profile__avatar" src="/assets/img_info/avatar.webp" alt="头像">
   </div>
 </section>
 

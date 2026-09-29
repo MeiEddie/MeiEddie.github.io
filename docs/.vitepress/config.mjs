@@ -10,6 +10,13 @@ export default defineConfig({
   base: "/",
   title: "Eddieの小窝",
   description: "一个小小的博客",
+  // 2026.9.28：Vite 依赖预打包缓存的位置，**默认**是 `docs/.vitepress/cache/`。
+  //   按「.vitepress 下只留构建必需的 config/theme」的口径搬到 `.test/tmp/`（运行缓存归那里）。
+  //   ⚠️ 路径基准是 **srcDir（= docs/）**，不是 .vitepress、也不是仓库根 —— 自定义 cacheDir 时
+  //      VitePress 不会再拼 `.vitepress` 前缀（`path.resolve(root, userConfig.cacheDir)`），
+  //      所以这里必须写 `../` 往上出一层。写成 `../.test/...` 之外的任何值都会跑偏。
+  //   ⚠️ 缓存丢了不影响构建结果，只影响首次冷启动速度（会重新预打包），**可随时删**。
+  cacheDir: '../.test/tmp/vitepress-cache',
   vite: {
     define: {
       __ZSU_PASSWORD_HASH__: JSON.stringify(zsuPasswordHash),
@@ -48,7 +55,7 @@ export default defineConfig({
       ],
 
       '电脑知识': [
-        { text: '简介', link: '/电脑知识/简介'},
+        { text: '电脑知识简介', link: '/电脑知识/电脑知识简介'},
 
         {
           text: '办公软件',
@@ -56,11 +63,12 @@ export default defineConfig({
           collapsed: true,
           items: [
             { text: 'Excel表冻结行列', link: '/电脑知识/办公软件/Excel表冻结行列' },
+            { text: 'Excel表滚动条过短', link: '/电脑知识/办公软件/Excel表滚动条过短' },
           ]
         },
 
         { text: '文件整理', link: '/电脑知识/文件整理'},
-        { text: '图片传输', link: '/电脑知识/图片传输'},
+        { text: '文件传输', link: '/电脑知识/文件传输'},
         { text: '图片转PDF', link: '/电脑知识/图片转PDF'},
         { text: '图片格式转换', link: '/电脑知识/图片格式转换'},
         { text: '电脑装机', link: '/电脑知识/电脑装机'},
@@ -68,7 +76,7 @@ export default defineConfig({
       ],
 
       '概念学习': [
-        { text: '简介', link: '/概念学习/简介' },
+        { text: '概念学习简介', link: '/概念学习/概念学习简介' },
 
         {
           text: '网页制作',
@@ -77,6 +85,8 @@ export default defineConfig({
           items: [
             { text: '前端部分', link: '/概念学习/网页制作/前端部分' },
             { text: '后端部分', link: '/概念学习/网页制作/后端部分' },
+            { text: '网络协议', link: '/概念学习/网页制作/网络协议' },
+            { text: '部署与运维', link: '/概念学习/网页制作/部署与运维' },
           ]
         },
 
@@ -98,7 +108,7 @@ export default defineConfig({
       ],
 
       '理论学习': [
-        { text: '简介', link: '/理论学习/简介' },
+        { text: '理论学习简介', link: '/理论学习/理论学习简介' },
         {
           text: 'python',
           collapsible: true,
@@ -120,6 +130,17 @@ export default defineConfig({
             { text: 'CSS', link: '/理论学习/前端/CSS' },
             { text: 'JavaScript', link: '/理论学习/前端/JavaScript' },
             { text: 'Vue', link: '/理论学习/前端/Vue' },
+          ]
+        },
+
+        {
+          text: '后端',
+          collapsible: true,
+          collapsed: true,
+          items: [
+            { text: 'Web', link: '/理论学习/后端/Web' },
+            { text: '数据库', link: '/理论学习/后端/数据库' },
+            { text: 'API设计', link: '/理论学习/后端/API设计' },
           ]
         },
 
@@ -250,10 +271,6 @@ export default defineConfig({
 
       ],
 
-      '梗图': [
-        { text: '梗图', link: '/梗图/我的梗图' },
-      ],
-
       '数独文章': [
         { text: '数独介绍', link: '/数独文章/数独介绍' },
 
@@ -276,6 +293,11 @@ export default defineConfig({
           ]
         },
         
+      ],
+      
+      '齐齐哈尔': [
+        { text: '梗图', link: '/齐齐哈尔/梗图' },
+        { text: '笑话', link: '/齐齐哈尔/笑话' },
       ],
     },
 
